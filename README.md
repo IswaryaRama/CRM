@@ -1,203 +1,108 @@
-<div align="center" markdown="1">
-
-<a href="https://frappe.io/products/crm">
+<div align="center">
+  <a href="https://github.com/hitloop-ai/aiprof-frappe-crm">
     <img src=".github/logo.svg" height="80" alt="Frappe CRM Logo">
-</a>
-
-<h1>Frappe CRM</h1>
-
-**Simplify Sales, Amplify Relationships**
-
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/frappe/crm)](https://github.com/frappe/crm/releases)
-
-<div>
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/FrappeCRMHeroImage.png">
-        <img width="1402" alt="Frappe CRM Hero Image" src=".github/screenshots/FrappeCRMHeroImage.png">
-    </picture>
+  </a>
+  <h1>Frappe CRM (Customized)</h1>
+  <p><strong>A tailored sales, communication, and event management platform built on Vue 3 and Frappe.</strong></p>
 </div>
 
-[Live Demo](https://frappecrm-demo.frappe.cloud/api/method/crm.api.live_demo.login) - [Website](https://frappe.io/crm) - [Documentation](https://docs.frappe.io/crm)
+---
 
-</div>
+## What It Is & Key Uses
 
-## Frappe CRM
+This customized Frappe CRM application supercharges standard sales operations by adding rich communication channels and scheduling capabilities. 
 
-Frappe CRM is a simple, affordable, open-source CRM tool designed for modern sales teams with unlimited users. Frappe CRM is crafted for providing a great user experience, packed with features for core CRM activities helping you build strong customer relationships while keeping things clean and organised.
+### 1. Unified Lead & Deal Management
+* **All-in-One Lead Page**: Track comments, notes, tasks, and history dynamically on a single, responsive layout.
+* **Kanban & Custom Views**: Organise leads and deals visually using drag-and-drop Kanban boards or create personalized list views with custom columns, quick sorting, and filters.
 
-### Motivation
+### 2. Vobiz Telephony Integration
+* **In-App Calling**: Make and receive calls directly from the CRM with active call timers and call log records.
+* **Real-time Sync & Automation**: Automatic update of Lead fields upon call creation/update, real-time call log sync via webhook events, and timezone-localized call histories.
+* **Integrated Call UI**: Call handling panels built natively into the frontend.
 
-The motivation behind building Frappe CRM stems from the need for a simple, customizable, and open-source solution tailored to modern business needs. Many existing CRMs are either too complex, overly generic, or locked behind steep pricing models that hinder accessibility and flexibility. Frappe CRM was designed to bridge this gap, offering a tool that empowers businesses to manage their customer relationships seamlessly while being easy to adapt to specific workflows. Built on the Frappe framework, it prioritizes usability, extensibility, and affordability, making it an ideal choice for growing teams and organizations looking for a CRM that aligns with their unique processes.
+### 3. Calendar & Event Management
+* **Event Scheduling**: Plan meetings and invite attendees/users directly from the CRM.
+* **Real-time Notifications**: Receive system notifications for scheduled meetings and upcoming events.
 
-### Key Features
+### 4. Real-time Frontend Updates
+* **Socket Integration**: Real-time interface updates for lead details and call statuses without manual page reloads.
 
--   **User-Friendly and Flexible:** A simple, intuitive interface that’s easy to navigate and highly customizable, enabling teams to adapt it to their specific processes effortlessly.
--   **All-in-One Lead/Deal Page:** Consolidate all essential actions and details—like activities, comments, notes, tasks, and more—into a single page for a seamless workflow experience.
--   **Kanban View:** Manage leads and deals visually with a drag-and-drop Kanban board, offering clarity and efficiency in tracking progress across stages.
--   **Custom Views:** Design personalized views to organize and display leads and deals using custom filters, sorting, and columns, ensuring quick access to the most relevant information.
+---
 
-    <details>
-    <summary>Screenshots</summary>
+## Installation & Setup
 
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/LeadList.png">
-            <img width="1402" alt="Lead List" src=".github/screenshots/LeadList.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/LeadPage.png">
-            <img width="1402" alt="Lead Page" src=".github/screenshots/LeadPage.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/EmailTemplate.png">
-            <img width="1402" alt="Email Template" src=".github/screenshots/EmailTemplate.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/CallUI.png">
-            <img width="1402" alt="Call UI" src=".github/screenshots/CallUI.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/CallLog.png">
-            <img width="1402" alt="Call Log" src=".github/screenshots/CallLog.png">
-        </picture>
-    </div>
+This repository is pre-configured to run inside a Docker environment with automated scripting for local development orchestration.
 
-    </details>
+### Prerequisites
+Make sure you have the following installed on your host system:
+* **Docker** and **Docker Compose**
+* **Node.js** (v18+) and **npm** or **yarn** (for running the frontend dev server on the host)
+* **tmux** (required by the automated orchestration script)
 
-### Integrations
+---
 
--   **Twilio:** Integrate Twilio to make and receive calls from the CRM. You can also record calls. It is a built-in integration.
--   **Exotel:** Integrate Exotel to make and receive calls via agents mobile phone from the CRM. You can also record calls. It is a built-in integration.
--   **WhatsApp:** Integrate WhatsApp to send and receive messages from the CRM. [Frappe WhatsApp](https://github.com/shridarpatil/frappe_whatsapp) is used for this integration.
--   **ERPNext:** Integrate with [ERPNext](https://erpnext.com) to extend the CRM capabilities to include invoicing, accounting, and more.
+### Step-by-Step Launch
 
-### Under the Hood
-
-- [Frappe Framework](https://github.com/frappe/frappe): A full-stack web application framework.
-- [Frappe UI](https://github.com/frappe/frappe-ui): A Vue-based UI library, to provide a modern user interface.
-
-### Compatibility
-This app is compatible with the following versions of Frappe and ERPNext:
-
-| CRM branch            | Stability | Frappe branch        | ERPNext branch       |
-| :-------------------- | :-------- | :------------------- | :------------------- |
-| main - v1.x           | stable    | v15.x & v16.x        | v15.x & v16.x        |
-| develop - future/v2.x | unstable  | develop - future/v17 | develop - future/v17 |
-
-## Getting Started (Production)
-
-### Managed Hosting
-
-Get started with your personal or business site with a few clicks on Frappe Cloud - our official hosting service.
-<div>
-	<a href="https://frappecloud.com/crm/signup" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/try-on-fc-white.png">
-			<img src="https://frappe.io/files/try-on-fc-black.png" alt="Try on Frappe Cloud" height="28" />
-		</picture>
-	</a>
-</div>
-
-### Self Hosting
-
-Follow these steps to set up Frappe CRM in production:
-
-**Step 1**: Download the easy install script
-
+#### Step 1: Start Backend Services
+Run Docker Compose from the root directory to spin up MariaDB, Redis, and the Frappe bench container:
 ```bash
-wget https://frappe.io/easy-install.py
+docker compose up -d
+```
+> [!NOTE]
+> On the first run, the initialization script ([docker/init.sh](file:///home/satheesh/aiprof_crm/docker/init.sh)) will automatically initialize the Frappe bench, symlink the CRM application, and create the development site `crm.localhost`.
+
+* **Backend URL**: `http://localhost:8005` (routes internally to `crm.localhost`)
+* **Default Credentials**:
+  * **Username**: `Administrator`
+  * **Password**: `admin`
+
+#### Step 2: Install Frontend Dependencies
+Navigate to the `frontend/` directory and install the packages:
+```bash
+cd frontend
+npm install # or yarn install
 ```
 
-**Step 2**: Run the deployment command
-
+#### Step 3: Run the Development Environment
+Start the unified frontend and tunnel environment from the root directory:
 ```bash
-python3 ./easy-install.py deploy \
-    --project=crm_prod_setup \
-    --email=email.example.com \
-    --image=ghcr.io/frappe/crm \
-    --version=stable \
-    --app=crm \
-    --sitename subdomain.domain.tld
+./start-crm.sh
 ```
+This script automates the full environment setup:
+1. Launches the Vite development server on port `8085`.
+2. Spins up public tunnels using **localtunnel** and **localhost.run** to expose port `8085`.
+3. Updates the container's `site_config.json` with the active public URL.
+4. Auto-registers the webhook URL in **CRM Vobiz Settings** so Vobiz voice events route directly back to your local container.
+5. Launches a **tmux** session named `crm` containing three windows:
+   * **Window 0 (`dev`)**: Vite dev server (`http://localhost:8085`)
+   * **Window 1 (`localtunnel`)**: Localtunnel client
+   * **Window 2 (`localhost_run`)**: Localhost.run SSH tunnel client
 
-Replace the following parameters with your values:
+##### tmux Commands:
+* `Ctrl+B 0` &rarr; Switch to the dev server console.
+* `Ctrl+B 1` &rarr; Switch to the localtunnel client logs.
+* `Ctrl+B 2` &rarr; Switch to the localhost.run client logs.
+* `Ctrl+B d` &rarr; Detach from the session (keeps everything running in the background).
 
--   `email.example.com`: Your email address
--   `subdomain.domain.tld`: Your domain name where CRM will be hosted
+---
 
-The script will set up a production-ready instance of Frappe CRM with all the necessary configurations in about 5 minutes.
+### Telephony & Webhook Utilities
 
-## Getting Started (Development)
+Use these scripts in the root directory to manage your public webhooks:
 
-### Local Setup
+* **Inspect or Override Webhook URL ([show-tunnel.sh](file:///home/satheesh/aiprof_crm/show-tunnel.sh))**:
+  Run without arguments to inspect the currently registered webhook URL. Pass a URL argument to manually override and register a specific webhook URL:
+  ```bash
+  # View active webhook URL and details
+  ./show-tunnel.sh
 
-1. [Setup Bench](https://docs.frappe.io/framework/user/en/installation).
-1. In the frappe-bench directory, run `bench start` and keep it running.
-1. Open a new terminal session and cd into `frappe-bench` directory and run following commands:
-    ```sh
-    $ bench get-app crm
-    $ bench new-site sitename.localhost --install-app crm
-    $ bench browse sitename.localhost --user Administrator
-    ```
-1. Access the crm page at `sitename.localhost:8000/crm` in your web browser.
+  # Manually set a custom webhook override (e.g. from ngrok)
+  ./show-tunnel.sh https://my-custom-tunnel.ngrok-free.app
+  ```
 
-**For Frontend Development**
-1. Open a new terminal session and cd into `frappe-bench/apps/crm`, and run the following commands:
-    ```
-    yarn install
-    yarn dev
-    ```
-1. Now, you can access the site on vite dev server at `http://sitename.localhost:8080`
-
-**Note:** You'll find all the code related to Frappe CRM's frontend inside `frappe-bench/apps/crm/frontend`
-
-### Docker
-
-You need Docker, docker-compose and git setup on your machine. Refer [Docker documentation](https://docs.docker.com/). After that, follow below steps:
-
-**Step 1**: Setup folder and download the required files
-
-    mkdir frappe-crm
-    cd frappe-crm
-
-    # Download the docker-compose file
-    wget -O docker-compose.yml https://raw.githubusercontent.com/frappe/crm/develop/docker/docker-compose.yml
-
-    # Download the setup script
-    wget -O init.sh https://raw.githubusercontent.com/frappe/crm/develop/docker/init.sh
-
-**Step 2**: Run the container and daemonize it
-
-    docker compose up -d
-
-**Step 3**: The site [http://crm.localhost:8000/crm](http://crm.localhost:8000/crm) should now be available. The default credentials are:
-
--   Username: Administrator
--   Password: admin
-
-## Learn and connect
-
--   [Telegram Public Group](https://t.me/frappecrm)
--   [Discuss Forum](https://discuss.frappe.io/c/frappe-crm)
--   [Documentation](https://docs.frappe.io/crm)
--   [YouTube](https://www.youtube.com/@frappetech)
--   [X/Twitter](https://x.com/frappetech)
-
-<br>
-<br>
-<div align="center" style="padding-top: 0.75rem;">
-	<a href="https://frappe.io" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
-			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
-		</picture>
-	</a>
-</div>
+* **Standalone Backend Tunnel ([start-tunnel.sh](file:///home/satheesh/aiprof_crm/start-tunnel.sh))**:
+  Start a standalone localtunnel exposing the backend server directly (port `8005`) and register the Vobiz webhook:
+  ```bash
+  ./start-tunnel.sh
+  ```
