@@ -85,24 +85,11 @@ This script automates the full environment setup:
 * `Ctrl+B 2` &rarr; Switch to the localhost.run client logs.
 * `Ctrl+B d` &rarr; Detach from the session (keeps everything running in the background).
 
+#### Step 4: Register Telephony Webhook 
+If you want to manually update or register your webhook URL with Vobiz (for example, when using a specific localtunnel URL):
+```bash
+./show-tunnel.sh https://new-tunnel-url.loca.lt
+```
+This updates the webhook URL in **CRM Vobiz Settings** and registers it with the Vobiz telephony API.
+
 ---
-
-### Telephony & Webhook Utilities
-
-Use these scripts in the root directory to manage your public webhooks:
-
-* **Inspect or Override Webhook URL ([show-tunnel.sh](file:///home/satheesh/aiprof_crm/show-tunnel.sh))**:
-  Run without arguments to inspect the currently registered webhook URL. Pass a URL argument to manually override and register a specific webhook URL:
-  ```bash
-  # View active webhook URL and details
-  ./show-tunnel.sh
-
-  # Manually set a custom webhook override (e.g. from ngrok)
-  ./show-tunnel.sh https://my-custom-tunnel.ngrok-free.app
-  ```
-
-* **Standalone Backend Tunnel ([start-tunnel.sh](file:///home/satheesh/aiprof_crm/start-tunnel.sh))**:
-  Start a standalone localtunnel exposing the backend server directly (port `8005`) and register the Vobiz webhook:
-  ```bash
-  ./start-tunnel.sh
-  ```
