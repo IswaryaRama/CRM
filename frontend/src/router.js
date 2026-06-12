@@ -27,7 +27,10 @@ const routes = [
   {
     path: '/leads/:leadId',
     name: 'Lead',
-    component: () => import(`@/pages/${handleMobileView('Lead')}.vue`),
+    component: () =>
+      window.innerWidth < 768
+        ? import('@/pages/MobileLead.vue')
+        : import('@/pages/Lead.vue'),
     props: true,
   },
   {
@@ -39,7 +42,10 @@ const routes = [
   {
     path: '/deals/:dealId',
     name: 'Deal',
-    component: () => import(`@/pages/${handleMobileView('Deal')}.vue`),
+    component: () =>
+      window.innerWidth < 768
+        ? import('@/pages/MobileDeal.vue')
+        : import('@/pages/Deal.vue'),
     props: true,
   },
   {
@@ -63,7 +69,10 @@ const routes = [
   {
     path: '/contacts/:contactId',
     name: 'Contact',
-    component: () => import(`@/pages/${handleMobileView('Contact')}.vue`),
+    component: () =>
+      window.innerWidth < 768
+        ? import('@/pages/MobileContact.vue')
+        : import('@/pages/Contact.vue'),
     props: true,
   },
   {
@@ -75,7 +84,10 @@ const routes = [
   {
     path: '/organizations/:organizationId',
     name: 'Organization',
-    component: () => import(`@/pages/${handleMobileView('Organization')}.vue`),
+    component: () =>
+      window.innerWidth < 768
+        ? import('@/pages/MobileOrganization.vue')
+        : import('@/pages/Organization.vue'),
     props: true,
   },
   {
@@ -83,6 +95,11 @@ const routes = [
     path: '/call-logs/view/:viewType?',
     name: 'Call Logs',
     component: () => import('@/pages/CallLogs.vue'),
+  },
+  {
+    path: '/calendar',
+    name: 'Calendar',
+    component: () => import('@/pages/Calendar.vue'),
   },
   {
     path: '/data-import',

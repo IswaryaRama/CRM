@@ -22,7 +22,9 @@ bench set-redis-socketio-host redis://redis:6379
 sed -i '/redis/d' ./Procfile
 sed -i '/watch/d' ./Procfile
 
-bench get-app crm --branch main
+ln -sf /workspace /home/frappe/frappe-bench/apps/crm
+/home/frappe/frappe-bench/env/bin/pip install -e /workspace
+printf "\ncrm\n" >> /home/frappe/frappe-bench/sites/apps.txt
 
 bench new-site crm.localhost \
     --force \

@@ -70,7 +70,12 @@
   "facebook_form_id",
   "lost_details_tab",
   "lost_reason",
-  "lost_notes"
+  "lost_notes",
+  "direction",
+  "call_date",
+  "call_time",
+  "call_duration",
+  "call_flag"
  ],
  "fields": [
   {
@@ -419,6 +424,32 @@
   {
    "fieldname": "column_break_opsm",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "label": "Direction",
+   "options": "\ninbound\noutbound"
+  },
+  {
+   "fieldname": "call_date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "call_time",
+   "fieldtype": "Time",
+   "label": "Time"
+  },
+  {
+   "fieldname": "call_duration",
+   "fieldtype": "Duration",
+   "label": "Duration"
+  },
+  {
+   "fieldname": "call_flag",
+   "fieldtype": "Data",
+   "label": "Flags"
   }
  ],
  "grid_page_length": 50,

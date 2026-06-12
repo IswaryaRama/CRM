@@ -18,15 +18,15 @@ services:
 
   frappe:
     image: frappe/bench:latest
-    command: bash /workspace/init.sh
+    command: bash /workspace/docker/init.sh
     environment:
       - SHELL=/bin/bash
     working_dir: /home/frappe
     volumes:
-      - .:/workspace
+      - ..:/workspace
     ports:
-      - 8000:8000
-      - 9000:9000
+      - 8005:8000
+      - 9005:9000
 
 volumes:
   mariadb-data:

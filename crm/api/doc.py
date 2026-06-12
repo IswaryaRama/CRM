@@ -52,6 +52,18 @@ def sort_options(doctype: str):
 
 
 @frappe.whitelist()
+def get_unique_flags():
+	flags = frappe.get_all(
+		"CRM Lead",
+		fields=["call_flag"],
+		filters={"call_flag": ["is", "set"]},
+		distinct=True,
+		pluck="call_flag",
+	)
+	return [f for f in flags if f]
+
+
+@frappe.whitelist()
 def get_filterable_fields(doctype: str):
 	allowed_fieldtypes = [
 		"Check",
@@ -400,16 +412,23 @@ def get_data(
 				rows.append(field)
 
 		for kc in kanban_columns:
-			column_filters = {column_field: kc.get("name")}
+			# Start with base filters
+			column_filters = []
+
+			# Convert and add the main filters first
+			if filters:
+				base_filters = convert_filter_to_tuple(doctype, filters)
+				column_filters.extend(base_filters)
+
+			# Add the column-specific filter
+			if column_field and kc.get("name"):
+				column_filters.append([doctype, column_field, "=", kc.get("name")])
+
 			order = kc.get("order")
-			if (column_field in filters and filters.get(column_field) != kc.get("name")) or kc.get("delete"):
+			if kc.get("delete"):
 				column_data = []
 			else:
-				column_filters.update(filters.copy())
-				page_length = 20
-
-				if kc.get("page_length"):
-					page_length = kc.get("page_length")
+				page_length = kc.get("page_length", 20)
 
 				if order:
 					column_data = get_records_based_on_order(
@@ -419,25 +438,19 @@ def get_data(
 					column_data = frappe.get_list(
 						doctype,
 						fields=rows,
-						filters=convert_filter_to_tuple(doctype, column_filters),
+						filters=column_filters,
 						order_by=order_by,
 						page_length=page_length,
 					)
 
-				new_filters = filters.copy()
-				new_filters.update({column_field: kc.get("name")})
-
 				all_count = frappe.get_list(
 					doctype,
-					filters=convert_filter_to_tuple(doctype, new_filters),
+					filters=column_filters,
 					fields=[COUNT_NAME],
 				)[0].total_count
 
 				kc["all_count"] = all_count
 				kc["count"] = len(column_data)
-
-				for d in column_data:
-					getCounts(d, doctype)
 
 			if order:
 				column_data = sorted(
@@ -733,6 +746,7 @@ def remove_doc_link(doctype, docname):
 				"reference_doctype": "",
 				"reference_name": "",
 			}
+
 			if linked_doc_data.get("notification_type_doctype") == linked_doc_data.get("reference_doctype"):
 				delete_references.update(delete_notification_type)
 
@@ -783,6 +797,7 @@ def remove_linked_doc_reference(items: str | list, remove_contact: bool = False,
 				remove_contact_link(item["doctype"], item["docname"])
 			else:
 				remove_doc_link(item["doctype"], item["docname"])
+
 			if delete:
 				frappe.delete_doc(item["doctype"], item["docname"])
 		except (frappe.DoesNotExistError, frappe.ValidationError):

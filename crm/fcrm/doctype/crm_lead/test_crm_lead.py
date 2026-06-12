@@ -2,12 +2,12 @@
 # See license.txt
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase
 
 from crm.fcrm.doctype.crm_lead.crm_lead import convert_to_deal
 
 
-class TestCRMLead(FrappeTestCase):
+class TestCRMLead(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		"""Set up test records once for all tests"""
@@ -506,6 +506,19 @@ class TestCRMLead(FrappeTestCase):
 		deal_assignees = deal.get_assigned_users()
 		self.assertIn("Administrator", deal_assignees)
 		self.assertIn("crm.user1@example.com", deal_assignees)
+
+	def test_get_unique_flags(self):
+		"""Test that get_unique_flags returns list of unique flags"""
+		from crm.api.doc import get_unique_flags
+
+		create_lead(first_name="Lead 1", call_flag="Spam")
+		create_lead(first_name="Lead 2", call_flag="Follow Up")
+		create_lead(first_name="Lead 3", call_flag="Spam")
+
+		flags = get_unique_flags()
+		self.assertIn("Spam", flags)
+		self.assertIn("Follow Up", flags)
+		self.assertEqual(len([f for f in flags if f == "Spam"]), 1)
 
 
 def create_lead(**kwargs):

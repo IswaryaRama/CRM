@@ -5,13 +5,26 @@ import { getCachedListResource, getCachedResource } from 'frappe-ui'
 export function initSocket() {
   let host = window.location.hostname
   let siteName = window.site_name
-  let port = window.location.port ? `:${socketio_port}` : ''
+  let port = ''
+  if (window.location.port) {
+    if (import.meta.env.DEV) {
+      port = `:${window.location.port}`
+    } else {
+      port = `:${socketio_port}`
+    }
+  }
   let protocol = port ? 'http' : 'https'
   let url = `${protocol}://${host}${port}/${siteName}`
+
+  let overrideUrl = localStorage.getItem('socketio_url_override')
+  if (overrideUrl) {
+    url = overrideUrl
+  }
 
   let socket = io(url, {
     withCredentials: true,
     reconnectionAttempts: 5,
+    transports: ['websocket'],
   })
   socket.on('refetch_resource', (data) => {
     if (data.cache_key) {

@@ -13,11 +13,11 @@ const props = defineProps({
   content: { type: String, required: true },
 })
 
-const files = import.meta.glob('/src/index.css', {
+const files = import.meta.glob('@/index.css', {
   eager: true,
   query: '?inline',
 })
-const css = files['/src/index.css'].default
+const css = files['/src/index.css']?.default ?? ''
 
 const iframeRef = ref(null)
 const _content = ref(props.content)

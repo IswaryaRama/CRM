@@ -26,8 +26,88 @@
     :filters="{ converted: 0 }"
     :options="{
       allowedViews: ['list', 'group_by', 'kanban'],
+      hideFilterButton: true,
+      hideSortButton: true,
     }"
   />
+  <div 
+    v-if="leads.data"
+    class="mx-5 mb-4 p-4 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-gray-100 dark:border-gray-800 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-sm transition-all duration-300"
+  >
+    <!-- Left Side: Quick Filters -->
+    <div class="flex flex-wrap items-center gap-6">
+      <!-- Direction Filter -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ __('Direction') }}</span>
+        <div class="flex bg-gray-100/80 dark:bg-gray-800/80 p-0.5 rounded-lg border border-gray-200/40 dark:border-gray-700/40">
+          <button 
+            v-for="dir in ['all', 'inbound', 'outbound']" 
+            :key="dir"
+            @click="setDirectionFilter(dir)"
+            :class="[
+              'px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 capitalize',
+              activeDirection === dir 
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            ]"
+          >
+            {{ __(dir) }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Flags Filter -->
+      <div class="flex flex-col gap-1.5 min-w-[160px]">
+        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ __('Filter by Flag') }}</span>
+        <select 
+          :value="activeFlag"
+          @change="setFlagFilter($event.target.value)"
+          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+        >
+          <option value="">{{ __('All Flags') }}</option>
+          <option v-for="flag in uniqueFlags" :key="flag" :value="flag">{{ flag }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Right Side: Quick Sort -->
+    <div class="flex items-center gap-6">
+      <!-- Sort By Field -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ __('Sort By') }}</span>
+        <div class="flex items-center gap-2">
+          <div class="flex bg-gray-100/80 dark:bg-gray-800/80 p-0.5 rounded-lg border border-gray-200/40 dark:border-gray-700/40">
+            <button 
+              v-for="s in [
+                { label: 'Date', field: 'call_date' },
+                { label: 'Name', field: 'lead_name' }
+              ]" 
+              :key="s.field"
+              @click="setSortField(s.field)"
+              :class="[
+                'px-3 py-1 text-sm font-medium rounded-md transition-all duration-200',
+                activeSortField === s.field 
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              ]"
+            >
+              {{ __(s.label) }}
+            </button>
+          </div>
+          <button 
+            @click="toggleSortDirection"
+            class="p-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg border border-gray-200/40 dark:border-gray-700/40 transition-all duration-200 flex items-center justify-center"
+            :title="activeSortDirection === 'asc' ? __('Ascending') : __('Descending')"
+          >
+            <component 
+              :is="activeSortDirection === 'asc' ? AscendingIcon : DesendingIcon" 
+              class="h-4 w-4 text-gray-600 dark:text-gray-400"
+            />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   <KanbanView
     v-if="route.params.viewType == 'kanban'"
     v-model="leads"
@@ -278,6 +358,8 @@ import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import CommentIcon from '@/components/Icons/CommentIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
+import AscendingIcon from '@/components/Icons/AscendingIcon.vue'
+import DesendingIcon from '@/components/Icons/DesendingIcon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import LeadsListView from '@/components/ListViews/LeadsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
@@ -293,13 +375,13 @@ import { callEnabled } from '@/composables/telephony'
 import { useBroadcast } from '@/composables/useBroadcast'
 import { formatDate, timeAgo, website, formatTime } from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
-import { Avatar, Tooltip, Dropdown } from 'frappe-ui'
+import { Avatar, Tooltip, Dropdown, createResource } from 'frappe-ui'
 import { useRoute } from 'vue-router'
-import { ref, computed, reactive, h } from 'vue'
+import { ref, computed, reactive, h, onMounted, onBeforeUnmount } from 'vue'
 
 const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
   getMeta('CRM Lead')
-const { makeCall } = globalStore()
+const { makeCall, $socket } = globalStore()
 const { getUser } = usersStore()
 const { getLeadStatus } = statusesStore()
 const { on } = useBroadcast()
@@ -324,6 +406,22 @@ const loadMore = ref(1)
 const triggerResize = ref(1)
 const updatedPageCount = ref(20)
 const viewControls = ref(null)
+
+onMounted(() => {
+  if ($socket) {
+    $socket.on('crm_lead_update', () => {
+      if (leads.value && typeof leads.value.reload === 'function') {
+        leads.value.reload()
+      }
+    })
+  }
+})
+
+onBeforeUnmount(() => {
+  if ($socket) {
+    $socket.off('crm_lead_update')
+  }
+})
 
 function getRow(name, field) {
   function getValue(value) {
@@ -594,5 +692,80 @@ function after(d, isNew = false) {
   } else {
     capture(a + '_updated')
   }
+}
+
+// Quick Filters and Sorts logic
+const uniqueFlagsResource = createResource({
+  url: 'crm.api.doc.get_unique_flags',
+  auto: true,
+})
+const uniqueFlags = computed(() => uniqueFlagsResource.data || [])
+
+const activeDirection = computed(() => {
+  return leads.value?.params?.filters?.direction || 'all'
+})
+
+function setDirectionFilter(dir) {
+  let currentFilters = { ...leads.value.params.filters }
+  if (dir && dir !== 'all') {
+    currentFilters.direction = dir
+  } else {
+    delete currentFilters.direction
+  }
+  viewControls.value.updateFilter(currentFilters)
+}
+
+const activeFlag = computed(() => {
+  return leads.value?.params?.filters?.call_flag || ''
+})
+
+function setFlagFilter(flag) {
+  let currentFilters = { ...leads.value.params.filters }
+  if (flag) {
+    currentFilters.call_flag = flag
+  } else {
+    delete currentFilters.call_flag
+  }
+  viewControls.value.updateFilter(currentFilters)
+}
+
+const activeSortField = computed(() => {
+  const orderBy = leads.value?.params?.order_by || ''
+  if (orderBy.includes('lead_name')) return 'lead_name'
+  if (orderBy.includes('call_date')) return 'call_date'
+  return ''
+})
+
+const activeSortDirection = computed(() => {
+  const orderBy = leads.value?.params?.order_by || ''
+  if (orderBy.includes('asc')) return 'asc'
+  return 'desc'
+})
+
+function setSortField(field) {
+  let direction = activeSortDirection.value
+  let orderBy = ''
+  if (field === 'call_date') {
+    orderBy = direction === 'asc' 
+      ? 'call_date is null desc, call_date asc, call_time asc' 
+      : 'call_date is null asc, call_date desc, call_time desc'
+  } else if (field === 'lead_name') {
+    orderBy = `lead_name ${direction}`
+  }
+  viewControls.value.updateSort(orderBy)
+}
+
+function toggleSortDirection() {
+  let field = activeSortField.value || 'call_date'
+  let nextDirection = activeSortDirection.value === 'asc' ? 'desc' : 'asc'
+  let orderBy = ''
+  if (field === 'call_date') {
+    orderBy = nextDirection === 'asc' 
+      ? 'call_date is null desc, call_date asc, call_time asc' 
+      : 'call_date is null asc, call_date desc, call_time desc'
+  } else if (field === 'lead_name') {
+    orderBy = `lead_name ${nextDirection}`
+  }
+  viewControls.value.updateSort(orderBy)
 }
 </script>

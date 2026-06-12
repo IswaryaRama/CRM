@@ -1,0 +1,20 @@
+{
+ "background_workers": 1,
+ "db_host": "mariadb",
+ "default_site": "crm.localhost",
+ "file_watcher_port": 6787,
+ "frappe_user": "frappe",
+ "gunicorn_workers": 257,
+ "live_reload": true,
+ "rebase_on_pull": false,
+ "redis_cache": "redis://redis:6379",
+ "redis_queue": "redis://redis:6379",
+ "redis_socketio": "redis://redis:6379",
+ "restart_supervisor_on_update": false,
+ "restart_systemd_on_update": false,
+ "serve_default_site": true,
+ "shallow_clone": true,
+ "socketio_port": 9005,
+ "use_redis_auth": false,
+ "webserver_port": 8005
+}

@@ -7,7 +7,13 @@ const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
 export function getCallLogDetail(row, log, columns = []) {
   let incoming = log.type === 'Incoming'
 
-  if (row === 'duration') {
+  if (row === 'lead_name') {
+    return {
+      label: log.lead_name,
+      image: null,
+      image_label: log.lead_name,
+    }
+  } else if (row === 'duration' || row === 'call_duration') {
     return {
       label: log._duration,
       icon: 'clock',

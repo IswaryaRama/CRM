@@ -15,9 +15,14 @@ frontend/coverage
 .github/instructions
 .github/skills
 .github/copilot-instructions.md
-.github/workflows/builds.yml
 
 CLAUDE.md
 AGENTS.md
 .claude
 .pi
+
+# Local development files & logs
+scratch/
+*.log
+wsl_ip.txt
+workspace

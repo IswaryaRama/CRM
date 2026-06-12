@@ -2,7 +2,7 @@
 # See license.txt
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase
 
 from crm.integrations.api import (
 	add_note_to_call_log,
@@ -15,7 +15,7 @@ from crm.integrations.api import (
 )
 
 
-class TestIntegrations(FrappeTestCase):
+class TestIntegrations(IntegrationTestCase):
 	def tearDown(self):
 		frappe.db.rollback()
 
@@ -494,6 +494,85 @@ class TestIntegrations(FrappeTestCase):
 		# Should return None since lead is converted
 		self.assertIsNone(docname)
 		self.assertIsNone(doctype)
+
+	def test_vobiz_hangup(self):
+		"""Test Vobiz hangup webhook endpoint updates the call log"""
+		from crm.integrations.vobiz.api import hangup
+
+		# Enable Vobiz Settings
+		frappe.db.set_single_value("CRM Vobiz Settings", "enabled", 1)
+
+		# Clean up any duplicate records from previous runs
+		frappe.db.delete("CRM Call Log", {"id": "vobiz-test-call-123"})
+
+		# Create a test call log representing an initiated Vobiz call
+		call_log = create_test_call_log(
+			id="vobiz-test-call-123",
+			telephony_medium="Vobiz",
+			status="Initiated",
+		)
+
+		# Trigger mock hangup webhook call
+		payload = {
+			"CallUUID": "vobiz-test-call-123",
+			"Status": "completed",
+			"Duration": "45",
+			"StartTime": "2026-06-04 19:00:00",
+			"EndTime": "2026-06-04 19:00:45",
+		}
+		
+		response = hangup(**payload)
+		
+		# Verify response is 200 OK
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data, b"OK")
+
+		# Reload and verify call log updates
+		call_log.reload()
+		self.assertEqual(call_log.status, "Completed")
+		self.assertEqual(call_log.duration, 45)
+		self.assertEqual(str(call_log.start_time), "2026-06-04 19:00:00")
+		self.assertEqual(str(call_log.end_time), "2026-06-04 19:00:45")
+
+	def test_vobiz_webhook_url_override(self):
+		"""Test CRM Vobiz Settings webhook URL generation and override"""
+		settings = frappe.get_single("CRM Vobiz Settings")
+		
+		# Save original state
+		orig_enabled = settings.enabled
+		orig_override = settings.webhook_url_override
+		
+		try:
+			settings.enabled = 1
+			settings.webhook_url_override = "https://custom-tunnel.ngrok-free.app"
+			settings.save()
+			
+			# Verify get_webhook_url returns overridden URL
+			webhook_url = settings.get_webhook_url()
+			self.assertEqual(webhook_url, "https://custom-tunnel.ngrok-free.app/api/method/crm.integrations.vobiz.api.voice")
+			
+			# Verify different formats of the input:
+			
+			# Case 1: Custom base domain without trailing slash or protocol
+			settings.webhook_url_override = "custom-tunnel.lhr.life"
+			webhook_url = settings.get_webhook_url()
+			self.assertEqual(webhook_url, "https://custom-tunnel.lhr.life/api/method/crm.integrations.vobiz.api.voice")
+			
+			# Case 2: Custom base domain with trailing slash
+			settings.webhook_url_override = "https://my-tunnel.ngrok-free.app/"
+			webhook_url = settings.get_webhook_url()
+			self.assertEqual(webhook_url, "https://my-tunnel.ngrok-free.app/api/method/crm.integrations.vobiz.api.voice")
+			
+			# Case 3: Complete URL override
+			settings.webhook_url_override = "http://localhost:8000/api/method/crm.integrations.vobiz.api.voice"
+			webhook_url = settings.get_webhook_url()
+			self.assertEqual(webhook_url, "http://localhost:8000/api/method/crm.integrations.vobiz.api.voice")
+			
+		finally:
+			# Restore original state
+			settings.enabled = orig_enabled
+			settings.webhook_url_override = orig_override
+			settings.save()
 
 
 def create_test_call_log(**kwargs):

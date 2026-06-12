@@ -214,10 +214,11 @@
     :options="{
       rowCount: options.rowCount,
       totalCount: options.totalCount,
+      pageLengthOptions: ['20', '50', '100', '250', '500'],
     }"
     @loadMore="emit('loadMore')"
   />
-  <ListBulkActions ref="listBulkActionsRef" v-model="list" doctype="CRM Lead" />
+  <ListBulkActions ref="listBulkActionsRef" v-model="list" doctype="CRM Lead" :options="{ hideDelete: true, hideEdit: true }" />
 </template>
 
 <script setup>
@@ -270,7 +271,7 @@ const emit = defineEmits([
 
 const route = useRoute()
 
-const pageLengthCount = defineModel({ type: Number })
+const pageLengthCount = defineModel({ type: [Number, String] })
 const list = defineModel('list', { type: Object })
 
 function getLabel(label, column) {
@@ -294,7 +295,7 @@ function isLiked(item) {
 
 watch(pageLengthCount, (val, old_value) => {
   if (val === old_value) return
-  emit('updatePageCount', val)
+  emit('updatePageCount', typeof val === 'string' ? parseInt(val, 10) : val)
 })
 
 const listBulkActionsRef = ref(null)

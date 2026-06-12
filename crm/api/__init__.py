@@ -110,6 +110,7 @@ def invite_by_email(emails: str, role: str):
 
 	if not emails:
 		return
+
 	email_string = validate_email_address(emails, throw=False)
 	email_list = split_emails(email_string)
 	if not email_list:

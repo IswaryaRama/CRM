@@ -2,7 +2,7 @@
 # See license.txt
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase
 
 from crm.fcrm.doctype.crm_deal.crm_deal import (
 	add_contact,
@@ -12,7 +12,7 @@ from crm.fcrm.doctype.crm_deal.crm_deal import (
 )
 
 
-class TestCRMDeal(FrappeTestCase):
+class TestCRMDeal(IntegrationTestCase):
 	def tearDown(self) -> None:
 		frappe.db.rollback()
 

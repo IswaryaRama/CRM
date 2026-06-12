@@ -50,6 +50,7 @@
               { label: __(''), value: '' },
               { label: __('Twilio'), value: 'Twilio' },
               { label: __('Exotel'), value: 'Exotel' },
+              { label: __('Vobiz'), value: 'Vobiz' },
             ]"
             :placeholder="__('Select Medium')"
           />
@@ -138,6 +139,75 @@
       </div>
 
       <div
+        v-if="isEnabled('vobiz')"
+        class="h-px border-t mx-2 border-outline-gray-modals"
+      />
+      <div
+        v-if="isEnabled('vobiz')"
+        class="flex items-center justify-between gap-8 py-3 pl-2 pr-1"
+      >
+        <div class="flex flex-col">
+          <div class="text-p-base font-medium text-ink-gray-7 truncate">
+            {{ __('WebRTC Number') }}
+          </div>
+          <div class="text-p-sm text-ink-gray-5">
+            {{ __('Set the Vobiz WebRTC caller ID / number to be used for outgoing calls.') }}
+          </div>
+        </div>
+        <div>
+          <FormControl
+            v-model="telephonyAgent.doc.vobiz_number"
+            class="flex-1 truncate w-44 p-1"
+            :placeholder="__('Enter WebRTC Number')"
+            placement="bottom-end"
+          />
+        </div>
+      </div>
+      <div
+        v-if="isEnabled('vobiz')"
+        class="flex items-center justify-between gap-8 py-3 pl-2 pr-1"
+      >
+        <div class="flex flex-col">
+          <div class="text-p-base font-medium text-ink-gray-7 truncate">
+            {{ __('WebRTC Username') }}
+          </div>
+          <div class="text-p-sm text-ink-gray-5">
+            {{ __('WebRTC endpoint username for registration.') }}
+          </div>
+        </div>
+        <div>
+          <FormControl
+            v-model="telephonyAgent.doc.vobiz_username"
+            class="flex-1 truncate w-44 p-1"
+            :placeholder="__('Enter WebRTC Username')"
+            placement="bottom-end"
+          />
+        </div>
+      </div>
+      <div
+        v-if="isEnabled('vobiz')"
+        class="flex items-center justify-between gap-8 py-3 pl-2 pr-1"
+      >
+        <div class="flex flex-col">
+          <div class="text-p-base font-medium text-ink-gray-7 truncate">
+            {{ __('WebRTC Password') }}
+          </div>
+          <div class="text-p-sm text-ink-gray-5">
+            {{ __('WebRTC endpoint password for registration.') }}
+          </div>
+        </div>
+        <div>
+          <FormControl
+            v-model="telephonyAgent.doc.vobiz_password"
+            type="password"
+            class="flex-1 truncate w-44 p-1"
+            :placeholder="__('Enter WebRTC Password')"
+            placement="bottom-end"
+          />
+        </div>
+      </div>
+
+      <div
         v-if="isManager()"
         class="flex items-center justify-between text-lg text-ink-gray-8 font-semibold mt-4 py-3 px-2"
       >
@@ -192,6 +262,33 @@
           @click="emit('updateStep', 'exotel-settings')"
         />
       </div>
+
+      <div
+        v-if="isManager()"
+        class="h-px border-t mx-2 border-outline-gray-modals"
+      />
+
+      <div
+        v-if="isManager()"
+        class="flex items-center justify-between py-3 px-2"
+      >
+        <div class="flex flex-col gap-1">
+          <span class="text-base font-medium text-ink-gray-8">
+            {{ __('Vobiz') }}
+          </span>
+          <span class="text-p-sm text-ink-gray-6">
+            {{
+              __('Configure your Vobiz Telephony Integration Settings here')
+            }}
+          </span>
+        </div>
+        <Button
+          :label="
+            isEnabled('vobiz') ? __('Update Configuration') : __('Configure')
+          "
+          @click="emit('updateStep', 'vobiz-settings')"
+        />
+      </div>
     </div>
     <ErrorMessage
       :message="isNewDoc ? insertResource.error : telephonyAgent.save?.error"
@@ -219,15 +316,36 @@ const { getUser, isManager } = usersStore()
 
 const isNewDoc = ref(false)
 
+const userName = computed(() => {
+  const name = getUser().name
+  return name === 'admin@example.com' ? 'Administrator' : name
+})
+
 const { document: telephonyAgent } = useDocument(
   'CRM Telephony Agent',
-  getUser().name,
+  userName.value,
   {
     onError: (err) => {
       if (err.exc_type === 'DoesNotExistError') {
         isNewDoc.value = true
-        telephonyAgent.doc = {}
-        telephonyAgent.originalDoc = {}
+        telephonyAgent.doc = {
+          vobiz_number: '',
+          vobiz_username: '',
+          vobiz_password: '',
+          default_medium: '',
+          twilio_number: '',
+          exotel_number: '',
+          mobile_no: '',
+        }
+        telephonyAgent.originalDoc = {
+          vobiz_number: '',
+          vobiz_username: '',
+          vobiz_password: '',
+          default_medium: '',
+          twilio_number: '',
+          exotel_number: '',
+          mobile_no: '',
+        }
       }
     },
   },
@@ -253,7 +371,7 @@ function update() {
     insertResource.submit({
       doc: {
         doctype: 'CRM Telephony Agent',
-        user: getUser().name,
+        user: userName.value,
         ...telephonyAgent.doc,
       },
     })

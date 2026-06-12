@@ -37,7 +37,13 @@
       </div>
     </template>
     <template #content>
-      <div v-if="exotel.doc" class="h-full">
+      <div
+        v-if="exotel.get.loading"
+        class="flex items-center justify-center mt-[35%]"
+      >
+        <LoadingIndicator class="size-6" />
+      </div>
+      <div v-else-if="exotel.doc" class="h-full">
         <div v-if="exotel.doc.enabled" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <FormControl
@@ -92,7 +98,7 @@
               </div>
             </div>
             <div>
-              <Switch v-model="exotel.doc.record_call" size="sm" />
+              <Switch v-model="recordCall" size="sm" />
             </div>
           </div>
         </div>
@@ -119,12 +125,6 @@
           </div>
         </div>
       </div>
-      <div
-        v-else-if="exotel.get.loading"
-        class="flex items-center justify-center mt-[35%]"
-      >
-        <LoadingIndicator class="size-6" />
-      </div>
     </template>
   </SettingsLayoutBase>
 </template>
@@ -133,6 +133,17 @@ import { setEnabled } from '@/composables/telephony'
 import { useDocument } from '@/data/document'
 import { Switch } from 'frappe-ui'
 import { computed } from 'vue'
+
+const recordCall = computed({
+  get() {
+    return Boolean(exotel.doc?.record_call)
+  },
+  set(val) {
+    if (exotel.doc) {
+      exotel.doc.record_call = val ? 1 : 0
+    }
+  }
+})
 
 const emit = defineEmits(['updateStep'])
 

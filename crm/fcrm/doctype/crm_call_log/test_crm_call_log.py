@@ -2,7 +2,7 @@
 # See license.txt
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase
 
 from crm.fcrm.doctype.crm_call_log.crm_call_log import (
 	create_lead_from_call_log,
@@ -11,7 +11,7 @@ from crm.fcrm.doctype.crm_call_log.crm_call_log import (
 )
 
 
-class TestCRMCallLog(FrappeTestCase):
+class TestCRMCallLog(IntegrationTestCase):
 	def tearDown(self):
 		frappe.db.rollback()
 
@@ -421,6 +421,44 @@ class TestCRMCallLog(FrappeTestCase):
 
 		call2 = create_test_call_log(telephony_medium="Exotel")
 		self.assertEqual(call2.telephony_medium, "Exotel")
+
+	def test_call_log_updates_lead_only_if_latest(self):
+		"""Test that only the latest call log updates the linked Lead details"""
+		import datetime
+		# Create a Lead
+		lead = frappe.get_doc(
+			{
+				"doctype": "CRM Lead",
+				"first_name": "Latest Test Lead",
+				"lead_owner": "Administrator",
+			}
+		).insert()
+
+		# Create newer call log
+		call_new = create_test_call_log(
+			type="Incoming",
+			duration=120,
+			start_time="2026-06-07 10:00:00",
+			reference_doctype="CRM Lead",
+			reference_docname=lead.name,
+		)
+		
+		# Lead should have call_duration=120, call_date=2026-06-07, call_time=10:00:00
+		lead.reload()
+		self.assertEqual(lead.call_duration, 120)
+
+		# Create older call log
+		call_old = create_test_call_log(
+			type="Incoming",
+			duration=60,
+			start_time="2026-06-07 09:00:00",
+			reference_doctype="CRM Lead",
+			reference_docname=lead.name,
+		)
+
+		# Lead should STILL have call_duration=120 (retained from the newer call log!)
+		lead.reload()
+		self.assertEqual(lead.call_duration, 120)
 
 
 def create_test_call_log(**kwargs):

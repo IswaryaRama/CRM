@@ -16,6 +16,9 @@ def _get_recording_credentials(telephony_medium: str) -> tuple:
 	elif telephony_medium == "Exotel":
 		s = frappe.get_single("CRM Exotel Settings")
 		return s.api_key, s.get_password("api_token")
+	elif telephony_medium == "Vobiz":
+		s = frappe.get_single("CRM Vobiz Settings")
+		return s.auth_id, s.get_password("api_password")
 	frappe.throw(_("Unknown telephony medium: {0}").format(telephony_medium))
 
 
@@ -25,6 +28,7 @@ def is_call_integration_enabled():
 		"integrations": {
 			"twilio": bool(frappe.db.get_single_value("CRM Twilio Settings", "enabled")),
 			"exotel": bool(frappe.db.get_single_value("CRM Exotel Settings", "enabled")),
+			"vobiz": bool(frappe.db.get_single_value("CRM Vobiz Settings", "enabled")),
 		},
 		"default_calling_medium": get_user_default_calling_medium(),
 	}

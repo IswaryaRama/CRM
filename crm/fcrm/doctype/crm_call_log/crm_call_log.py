@@ -42,7 +42,7 @@ class CRMCallLog(Document):
 			"Queued",
 			"Canceled",
 		]
-		telephony_medium: DF.Literal["", "Manual", "Twilio", "Exotel"]
+		telephony_medium: DF.Literal["", "Manual", "Twilio", "Exotel", "Vobiz"]
 		to: DF.Data
 		type: DF.Literal["Incoming", "Outgoing"]
 	# end: auto-generated types
@@ -52,6 +52,36 @@ class CRMCallLog(Document):
 			self.id = generate_hash(length=12)
 		if not self.telephony_medium:
 			self.telephony_medium = "Manual"
+
+	def before_save(self):
+		self.update_lead_details()
+
+	def update_lead_details(self):
+		lead_name = self.get_linked_lead_name()
+		if lead_name:
+			lead = frappe.get_cached_doc("CRM Lead", lead_name)
+			self.lead_name = lead.lead_name
+			self.organization = lead.organization
+			self.mobile_no = lead.mobile_no
+			self.call_flag = getattr(lead, "call_flag", None)
+		else:
+			self.lead_name = None
+			self.organization = None
+			self.mobile_no = None
+			self.call_flag = None
+
+		self.direction = "inbound" if self.type == "Incoming" else "outbound"
+		
+		if self.start_time:
+			import pytz
+			dt = frappe.utils.to_datetime(self.start_time)
+			if dt:
+				if dt.tzinfo is None:
+					dt = pytz.utc.localize(dt)
+				system_tz = pytz.timezone(frappe.utils.get_system_timezone())
+				local_dt = dt.astimezone(system_tz)
+				self.call_date = local_dt.strftime("%Y-%m-%d")
+				self.call_time = local_dt.strftime("%H:%M:%S")
 
 	@staticmethod
 	def default_list_data():
@@ -145,6 +175,116 @@ class CRMCallLog(Document):
 				f"/api/method/crm.integrations.api.get_recording_url?call_log_name={d.get('name')}"
 			)
 		return d
+
+	def on_update(self):
+		self.update_linked_lead()
+
+	def after_insert(self):
+		self.update_linked_lead()
+
+	def update_linked_lead(self):
+		lead_name = self.get_linked_lead_name()
+		if lead_name and frappe.db.exists("CRM Lead", lead_name):
+			# Map Direction: set to inbound if this lead has ANY incoming call log
+			has_inbound = False
+			if self.type == "Incoming":
+				has_inbound = True
+			else:
+				has_inbound = frappe.db.sql(
+					"""
+					select cl.name
+					from `tabCRM Call Log` cl
+					left join `tabDynamic Link` dl on dl.parent = cl.name and dl.parenttype = 'CRM Call Log'
+					where cl.type = 'Incoming'
+					  and cl.name != %s
+					  and (
+					    (cl.reference_doctype = 'CRM Lead' and cl.reference_docname = %s)
+					    or (dl.link_doctype = 'CRM Lead' and dl.link_name = %s)
+					  )
+					limit 1
+					""",
+					(self.name, lead_name, lead_name),
+				)
+			
+			lead = frappe.get_doc("CRM Lead", lead_name)
+			new_direction = "inbound" if has_inbound else "outbound"
+			direction_changed = lead.direction != new_direction
+			if direction_changed:
+				lead.direction = new_direction
+
+			# Do not overwrite lead details with older call logs
+			more_recent_exists = False
+			if self.start_time:
+				more_recent_exists = frappe.db.sql(
+					"""
+					select cl.name
+					from `tabCRM Call Log` cl
+					left join `tabDynamic Link` dl on dl.parent = cl.name and dl.parenttype = 'CRM Call Log'
+					where cl.start_time > %s
+					  and cl.name != %s
+					  and (
+					    (cl.reference_doctype = 'CRM Lead' and cl.reference_docname = %s)
+					    or (dl.link_doctype = 'CRM Lead' and dl.link_name = %s)
+					  )
+					limit 1
+					""",
+					(self.start_time, self.name, lead_name, lead_name),
+				)
+				
+			if not more_recent_exists:
+				# Map Date and Time
+				if self.start_time:
+					import pytz
+					dt = frappe.utils.to_datetime(self.start_time)
+					if dt:
+						if dt.tzinfo is None:
+							dt = pytz.utc.localize(dt)
+						system_tz = pytz.timezone(frappe.utils.get_system_timezone())
+						local_dt = dt.astimezone(system_tz)
+						lead.call_date = local_dt.strftime("%Y-%m-%d")
+						lead.call_time = local_dt.strftime("%H:%M:%S")
+						
+				# Map Duration
+				if self.duration is not None:
+					lead.call_duration = int(self.duration)
+				
+			if direction_changed or not more_recent_exists:
+				# Save Lead
+				lead.save(ignore_permissions=True)
+
+	def get_linked_lead_name(self):
+		if self.reference_doctype == "CRM Lead" and self.reference_docname:
+			return self.reference_docname
+		
+		# If linked to a CRM Deal, resolve to its lead
+		if self.reference_doctype == "CRM Deal" and self.reference_docname:
+			lead_name = frappe.db.get_value("CRM Deal", self.reference_docname, "lead")
+			if lead_name:
+				return lead_name
+				
+		for link in getattr(self, "links", []):
+			if link.link_doctype == "CRM Lead" and link.link_name:
+				return link.link_name
+			if link.link_doctype == "CRM Deal" and link.link_name:
+				lead_name = frappe.db.get_value("CRM Deal", link.link_name, "lead")
+				if lead_name:
+					return lead_name
+
+		# Fallback: search by phone number of the call log
+		phone = self.to if self.type == "Outgoing" else self.get("from")
+		if phone:
+			cleaned_phone = (phone or "").replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
+			if cleaned_phone and len(cleaned_phone) >= 5:
+				lead_name = frappe.db.get_value(
+					"CRM Lead",
+					{"mobile_no": ["like", f"%{cleaned_phone}%"], "converted": 0},
+					"name",
+					order_by="modified desc"
+				)
+				if lead_name:
+					return lead_name
+		return None
+
 
 
 def parse_call_log(call):

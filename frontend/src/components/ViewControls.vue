@@ -7,6 +7,7 @@
       <div class="flex items-center justify-between gap-2 overflow-x-auto">
         <div class="flex gap-2">
           <Filter
+            v-if="!options?.hideFilterButton"
             v-model="list"
             :doctype="doctype"
             :default_filters="filters"
@@ -29,7 +30,7 @@
             @click="reload()"
           />
           <SortBy
-            v-if="route.params.viewType !== 'kanban'"
+            v-if="route.params.viewType !== 'kanban' && !options?.hideSortButton"
             v-model="list"
             :doctype="doctype"
             :hideLabel="isMobileView"
@@ -168,13 +169,14 @@
           @update="updateGroupBy"
         />
         <Filter
+          v-if="!options?.hideFilterButton"
           v-model="list"
           :doctype="doctype"
           :default_filters="filters"
           @update="updateFilter"
         />
         <SortBy
-          v-if="route.params.viewType !== 'kanban'"
+          v-if="route.params.viewType !== 'kanban' && !options?.hideSortButton"
           v-model="list"
           :doctype="doctype"
           @update="updateSort"
@@ -361,9 +363,9 @@ const { reload: reloadView, getDefaultView, getView } = viewsStore()
 const { isManager } = usersStore()
 
 const list = defineModel({ type: Object, default: () => ({}) })
-const loadMore = defineModel('loadMore', { type: Boolean })
-const resizeColumn = defineModel('resizeColumn', { type: Boolean })
-const updatedPageCount = defineModel('updatedPageCount', { type: Boolean })
+const loadMore = defineModel('loadMore', { type: Number })
+const resizeColumn = defineModel('resizeColumn', { type: Number })
+const updatedPageCount = defineModel('updatedPageCount', { type: Number })
 
 const route = useRoute()
 const router = useRouter()
@@ -426,7 +428,7 @@ const view = ref({
   type: 'list',
   icon: '',
   filters: {},
-  order_by: 'modified desc',
+  order_by: ['CRM Lead', 'CRM Call Log'].includes(props.doctype) ? 'call_date is null asc, call_date desc, call_time desc' : 'modified desc',
   column_field: 'status',
   title_field: '',
   kanban_columns: '',
@@ -461,7 +463,7 @@ function getParams() {
   const view_name = _view?.name || ''
   const view_type = _view?.type || route.params.viewType || 'list'
   const filters = (_view?.filters && JSON.parse(_view.filters)) || {}
-  const order_by = _view?.order_by || 'modified desc'
+  const order_by = _view?.order_by || (['CRM Lead', 'CRM Call Log'].includes(props.doctype) ? 'call_date is null asc, call_date desc, call_time desc' : 'modified desc')
   const group_by_field = _view?.group_by_field || 'owner'
   const columns = _view?.columns || ''
   const rows = _view?.rows || ''
@@ -1322,6 +1324,8 @@ defineExpose({
   viewsDropdownOptions,
   currentView,
   updateSelections,
+  updateFilter,
+  updateSort,
 })
 
 // Watchers

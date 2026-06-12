@@ -186,11 +186,21 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
+	"all": ["crm.api.event.trigger_offset_event_notifications"],
+	"hourly": ["crm.api.event.trigger_hourly_event_notifications"],
+	"daily": [
+		"crm.api.event.trigger_daily_event_notifications",
+		"crm.fcrm.doctype.crm_view_settings.crm_view_settings.clear_old_versions",
+	],
+	"weekly": ["crm.api.event.trigger_weekly_event_notifications"],
 	"daily_long": ["crm.lead_syncing.background_sync.sync_leads_from_sources_daily"],
 	"hourly_long": ["crm.lead_syncing.background_sync.sync_leads_from_sources_hourly"],
 	"monthly_long": ["crm.lead_syncing.background_sync.sync_leads_from_sources_monthly"],
 	"cron": {
-		"*/5 * * * *": ["crm.lead_syncing.background_sync.sync_leads_from_sources_5_minutes"],
+		"*/5 * * * *": [
+			"crm.lead_syncing.background_sync.sync_leads_from_sources_5_minutes",
+			"crm.integrations.vobiz.sync.sync_telephony_call_logs"
+		],
 		"*/10 * * * *": ["crm.lead_syncing.background_sync.sync_leads_from_sources_10_minutes"],
 		"*/15 * * * *": ["crm.lead_syncing.background_sync.sync_leads_from_sources_15_minutes"],
 	},

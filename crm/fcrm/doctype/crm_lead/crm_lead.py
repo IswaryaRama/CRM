@@ -1,8 +1,4 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
-# For license information, please see license.txt
-
 import json
-
 import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add as assign
@@ -427,41 +423,45 @@ class CRMLead(Document):
 			},
 			{
 				"label": "Organization",
-				"type": "Link",
-				"key": "organization",
-				"options": "CRM Organization",
-				"width": "10rem",
-			},
-			{
-				"label": "Status",
-				"type": "Link",
-				"options": "CRM Lead Status",
-				"key": "status",
-				"width": "8rem",
-			},
-			{
-				"label": "Email",
 				"type": "Data",
-				"key": "email",
+				"key": "organization",
 				"width": "12rem",
 			},
 			{
-				"label": "Mobile No.",
+				"label": "Phone",
 				"type": "Data",
 				"key": "mobile_no",
 				"width": "11rem",
 			},
 			{
-				"label": "Assigned To",
-				"type": "Text",
-				"key": "_assign",
-				"width": "10rem",
+				"label": "Direction",
+				"type": "Select",
+				"key": "direction",
+				"width": "8rem",
 			},
 			{
-				"label": "Last Modified",
-				"type": "Datetime",
-				"key": "modified",
+				"label": "Date",
+				"type": "Date",
+				"key": "call_date",
 				"width": "8rem",
+			},
+			{
+				"label": "Time",
+				"type": "Time",
+				"key": "call_time",
+				"width": "8rem",
+			},
+			{
+				"label": "Duration",
+				"type": "Duration",
+				"key": "call_duration",
+				"width": "8rem",
+			},
+			{
+				"label": "Flags",
+				"type": "Data",
+				"key": "call_flag",
+				"width": "10rem",
 			},
 		]
 		rows = [
@@ -472,11 +472,11 @@ class CRMLead(Document):
 			"email",
 			"mobile_no",
 			"lead_owner",
-			"first_name",
-			"sla_status",
-			"response_by",
-			"first_response_time",
-			"first_responded_on",
+			"direction",
+			"call_date",
+			"call_time",
+			"call_duration",
+			"call_flag",
 			"modified",
 			"_assign",
 			"image",
@@ -490,6 +490,13 @@ class CRMLead(Document):
 			"title_field": "lead_name",
 			"kanban_fields": '["organization", "email", "mobile_no", "_assign", "modified"]',
 		}
+
+	def on_update(self):
+		frappe.publish_realtime("crm_lead_update", {"lead": self.name})
+
+	def after_insert(self):
+		frappe.publish_realtime("crm_lead_update", {"lead": self.name})
+
 
 
 @frappe.whitelist()

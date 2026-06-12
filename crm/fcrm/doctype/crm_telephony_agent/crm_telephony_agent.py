@@ -18,11 +18,14 @@ class CRMTelephonyAgent(Document):
 		from crm.fcrm.doctype.crm_telephony_phone.crm_telephony_phone import CRMTelephonyPhone
 
 		call_receiving_device: DF.Literal["Computer", "Phone"]
-		default_medium: DF.Literal["", "Twilio", "Exotel"]
+		default_medium: DF.Literal["", "Twilio", "Exotel", "Vobiz"]
 		exotel_number: DF.Data | None
 		mobile_no: DF.Data | None
 		phone_nos: DF.Table[CRMTelephonyPhone]
 		twilio_number: DF.Data | None
+		vobiz_number: DF.Data | None
+		vobiz_username: DF.Data | None
+		vobiz_password: DF.Password | None
 		user: DF.Link
 		user_name: DF.Data | None
 	# end: auto-generated types

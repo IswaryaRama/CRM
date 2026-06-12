@@ -7,6 +7,18 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vitejs.dev/config/
 export default defineConfig(async ({ mode }) => {
   const isDev = mode === 'development'
+
+  const fs = await import('node:fs')
+  let socketioPort = 9000
+  try {
+    const commonSiteConfig = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, '../sites/common_site_config.json'), 'utf-8')
+    )
+    socketioPort = commonSiteConfig.socketio_port || 9000
+  } catch (e) {
+    // ignore
+  }
+
   const config = {
     plugins: [
       vue(),
@@ -15,6 +27,9 @@ export default defineConfig(async ({ mode }) => {
         registerType: 'autoUpdate',
         devOptions: {
           enabled: true,
+        },
+        workbox: {
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
         },
         manifest: {
           display: 'standalone',
@@ -55,6 +70,10 @@ export default defineConfig(async ({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
+        '../../../../sites/common_site_config.json': path.resolve(
+          __dirname,
+          '../sites/common_site_config.json',
+        ),
       },
     },
     optimizeDeps: {
@@ -68,18 +87,66 @@ export default defineConfig(async ({ mode }) => {
       ],
     },
     server: {
+      allowedHosts: true,
       fs: {
-        allow: [path.resolve(__dirname, '..')],
+        strict: false,
+        allow: [
+          path.resolve(__dirname, '..'),
+          path.resolve(__dirname, 'src'),
+          __dirname,
+        ],
+      },
+      proxy: {
+        '/socket.io': {
+          target: `http://127.0.0.1:${socketioPort}`,
+          ws: true,
+          changeOrigin: true,
+          configure: (proxy, _options) => {
+            proxy.on('proxyReqWs', (proxyReq, req, _socket, _options, _head) => {
+              const host = req.headers.host.split(':')[0]
+              proxyReq.setHeader('Origin', `http://${host}:8000`)
+            })
+            proxy.on('proxyReq', (proxyReq, req, _res, _options) => {
+              const host = req.headers.host.split(':')[0]
+              proxyReq.setHeader('Origin', `http://${host}:8000`)
+            })
+          },
+        },
+        '/vobiz-ws': {
+          target: 'wss://registrar.vobiz.ai:5063',
+          ws: true,
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/vobiz-ws/, ''),
+        },
       },
     },
+    appType: 'spa',
   }
+
+  // SPA history fallback for /crm routes so Vue Router can handle them
+  config.plugins.push({
+    name: 'crm-spa-fallback',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (
+          req.url.startsWith('/crm') &&
+          !req.url.includes('.') &&
+          req.headers.accept?.includes('text/html')
+        ) {
+          req.url = '/index.html'
+        }
+        next()
+      })
+    },
+  })
 
   const frappeui = await importFrappeUIPlugin(isDev, config)
   config.plugins.unshift(
     frappeui({
       frappeProxy: true,
       lucideIcons: true,
-      jinjaBootData: true,
+      jinjaBootData: !isDev,
       buildConfig: {
         indexHtmlPath: '../crm/www/crm.html',
         emptyOutDir: true,

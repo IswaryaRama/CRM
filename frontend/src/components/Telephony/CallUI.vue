@@ -1,6 +1,7 @@
 <template>
   <TwilioCallUI ref="twilio" />
   <ExotelCallUI ref="exotel" />
+  <VobizCallUI ref="vobiz" />
   <Dialog
     v-model="show"
     :options="{
@@ -25,7 +26,7 @@
           v-model="callMedium"
           type="select"
           :label="__('Calling Medium')"
-          :options="['Twilio', 'Exotel']"
+          :options="['Twilio', 'Exotel', 'Vobiz']"
         />
         <div class="flex flex-col gap-1">
           <FormControl
@@ -47,16 +48,18 @@
 <script setup>
 import TwilioCallUI from '@/components/Telephony/TwilioCallUI.vue'
 import ExotelCallUI from '@/components/Telephony/ExotelCallUI.vue'
+import VobizCallUI from '@/components/Telephony/VobizCallUI.vue'
 import { defaultCallingMedium, useTelephony } from '@/composables/telephony'
 import { globalStore } from '@/stores/global'
 import { FormControl, call, toast } from 'frappe-ui'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch, onMounted } from 'vue'
 
 const { setMakeCall } = globalStore()
 const { isEnabled, isAnyEnabled } = useTelephony()
 
 const twilio = ref(null)
 const exotel = ref(null)
+const vobiz = ref(null)
 
 const callMedium = ref('Twilio')
 const isDefaultMedium = ref(false)
@@ -68,6 +71,7 @@ const enabledIntegrations = computed(() =>
   [
     { key: 'twilio', label: 'Twilio', ref: twilio },
     { key: 'exotel', label: 'Exotel', ref: exotel },
+    { key: 'vobiz', label: 'Vobiz', ref: vobiz },
   ].filter(({ key }) => isEnabled(key)),
 )
 
@@ -99,6 +103,10 @@ function makeCallUsing() {
   if (callMedium.value === 'Exotel') {
     exotel.value.makeOutgoingCall(mobileNumber.value)
   }
+
+  if (callMedium.value === 'Vobiz') {
+    vobiz.value.makeOutgoingCall(mobileNumber.value)
+  }
   show.value = false
 }
 
@@ -113,24 +121,34 @@ async function setDefaultCallingMedium() {
   )
 }
 
+function initializeTelephony() {
+  for (const {
+    key,
+    label,
+    ref: integrationRef,
+  } of enabledIntegrations.value) {
+    if (integrationRef.value && typeof integrationRef.value.setup === 'function') {
+      integrationRef.value.setup()
+      callMedium.value = label
+    }
+  }
+
+  if (isAnyEnabled.value) {
+    callMedium.value = enabledIntegrations.value[0]?.label ?? 'Twilio'
+    setMakeCall(makeCall)
+  }
+}
+
+onMounted(() => {
+  initializeTelephony()
+})
+
 watch(
   isAnyEnabled,
-  () =>
+  () => {
     nextTick(() => {
-      for (const {
-        key,
-        label,
-        ref: integrationRef,
-      } of enabledIntegrations.value) {
-        integrationRef.value.setup()
-        callMedium.value = label
-      }
-
-      if (isAnyEnabled.value) {
-        callMedium.value = enabledIntegrations.value[0]?.label ?? 'Twilio'
-        setMakeCall(makeCall)
-      }
-    }),
-  { immediate: true },
+      initializeTelephony()
+    })
+  }
 )
 </script>

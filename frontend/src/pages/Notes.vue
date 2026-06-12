@@ -85,6 +85,7 @@
     :options="{
       rowCount: notes.data.row_count,
       totalCount: notes.data.total_count,
+      pageLengthOptions: ['20', '50', '100'],
     }"
     @loadMore="() => loadMore++"
   />
@@ -121,7 +122,7 @@ watch(
   (val, old_value) => {
     openNoteFromURL()
     if (!val || val === old_value) return
-    updatedPageCount.value = val
+    updatedPageCount.value = typeof val === 'string' ? parseInt(val, 10) : val
   },
 )
 

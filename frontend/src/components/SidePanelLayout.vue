@@ -7,7 +7,7 @@
           class="w-full section-border h-px border-t"
         />
         <div class="p-1 sm:p-3">
-          <Section
+          <CollapsibleSection
             labelClass="px-2 font-semibold"
             headerClass="h-8"
             :label="section.label"
@@ -384,7 +384,7 @@
                 </template>
               </FadedScrollableDiv>
             </slot>
-          </Section>
+          </CollapsibleSection>
         </div>
       </div>
     </template>
@@ -410,7 +410,7 @@ import ButtonControl, {
   getButtonTheme,
   getButtonVariant,
 } from '@/components/Controls/ButtonControl.vue'
-import Section from '@/components/Section.vue'
+import CollapsibleSection from '@/components/CollapsibleSection.vue'
 import PrimaryDropdown from '@/components/PrimaryDropdown.vue'
 import FadedScrollableDiv from '@/components/FadedScrollableDiv.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'

@@ -37,7 +37,13 @@
       </div>
     </template>
     <template #content>
-      <div v-if="twilio.doc" class="h-full">
+      <div
+        v-if="twilio.get.loading"
+        class="flex items-center justify-center mt-[35%]"
+      >
+        <LoadingIndicator class="size-6" />
+      </div>
+      <div v-else-if="twilio.doc" class="h-full">
         <div v-if="twilio.doc.enabled" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <FormControl
@@ -65,7 +71,7 @@
           >
             <div class="flex flex-col">
               <div class="text-p-base font-medium text-ink-gray-7 truncate">
-                {{ __('Twilio App Name') }}
+                {{ __('App Name') }}
               </div>
               <div class="text-p-sm text-ink-gray-5">
                 {{ __('Select a Twilio App for your CRM') }}
@@ -99,7 +105,7 @@
               </div>
             </div>
             <div>
-              <Switch v-model="twilio.doc.record_calls" size="sm" />
+              <Switch v-model="recordCalls" size="sm" />
             </div>
           </div>
         </div>
@@ -125,12 +131,6 @@
             </div>
           </div>
         </div>
-      </div>
-      <div
-        v-else-if="twilio.get.loading"
-        class="flex items-center justify-center mt-[35%]"
-      >
-        <LoadingIndicator class="size-6" />
       </div>
     </template>
   </SettingsLayoutBase>
@@ -166,6 +166,17 @@ const twilioApps = computed(() => {
     })
   }
   return apps
+})
+
+const recordCalls = computed({
+  get() {
+    return Boolean(twilio.doc?.record_calls)
+  },
+  set(val) {
+    if (twilio.doc) {
+      twilio.doc.record_calls = val ? 1 : 0
+    }
+  }
 })
 
 function enable() {

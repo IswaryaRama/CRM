@@ -24,6 +24,11 @@
   "brand_name",
   "brand_logo",
   "favicon",
+  "calendar_tab",
+  "default_reminder_section",
+  "default_calendar_view",
+  "event_notifications",
+  "all_day_event_notifications",
   "dropdown_items_tab",
   "dropdown_items"
  ],
@@ -125,6 +130,36 @@
    "fieldname": "auto_update_expected_deal_value",
    "fieldtype": "Check",
    "label": "Auto update Expected Deal Value"
+  },
+  {
+   "fieldname": "calendar_tab",
+   "fieldtype": "Tab Break",
+   "label": "Calendar"
+  },
+  {
+   "description": "Time before the event when a reminder notification will be sent by default. This will be applied to all events unless a custom notification is set for a specific event.",
+   "fieldname": "default_reminder_section",
+   "fieldtype": "Section Break",
+   "label": "Default Event Notifications"
+  },
+  {
+   "fieldname": "event_notifications",
+   "fieldtype": "Table",
+   "label": "Event Notifications",
+   "options": "Event Notifications"
+  },
+  {
+   "fieldname": "all_day_event_notifications",
+   "fieldtype": "Table",
+   "label": "All Day Event Notifications",
+   "options": "Event Notifications"
+  },
+  {
+   "default": "Weekly",
+   "fieldname": "default_calendar_view",
+   "fieldtype": "Select",
+   "label": "Default Calendar View",
+   "options": "Daily\nWeekly\nMonthly"
   },
   {
    "default": "1",

@@ -2,7 +2,7 @@
 # See license.txt
 
 # import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase, UnitTestCase
 
 # On IntegrationTestCase, the doctype test records and all
 # link-field test record dependencies are recursively loaded
@@ -11,10 +11,19 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class TestCRMTelephonyAgent(FrappeTestCase):
+class UnitTestCRMTelephonyAgent(UnitTestCase):
 	"""
 	Unit tests for CRMTelephonyAgent.
 	Use this class for testing individual functions and methods.
+	"""
+
+	pass
+
+
+class IntegrationTestCRMTelephonyAgent(IntegrationTestCase):
+	"""
+	Integration tests for CRMTelephonyAgent.
+	Use this class for testing interactions between multiple components.
 	"""
 
 	pass

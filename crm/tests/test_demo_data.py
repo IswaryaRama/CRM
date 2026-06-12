@@ -2,10 +2,10 @@ import json
 import os
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase
 
 
-class TestDemoData(FrappeTestCase):
+class TestDemoData(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()

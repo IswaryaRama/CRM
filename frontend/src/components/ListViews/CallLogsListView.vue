@@ -41,7 +41,19 @@
     >
       <ListRowItem :item="item" :align="column.align" class="overflow-hidden">
         <template #prefix>
-          <div v-if="['caller', 'receiver'].includes(column.key)">
+          <div v-if="column.key === 'lead_name'">
+            <Avatar
+              v-if="item.label"
+              class="flex items-center"
+              :image="item.image"
+              :label="item.image_label"
+              size="sm"
+            />
+          </div>
+          <div v-else-if="column.key === 'mobile_no' && item">
+            <PhoneIcon class="h-4 w-4" />
+          </div>
+          <div v-else-if="['caller', 'receiver'].includes(column.key)">
             <Avatar
               v-if="item.label"
               class="flex items-center"
@@ -50,7 +62,7 @@
               size="sm"
             />
           </div>
-          <div v-else-if="['type', 'duration'].includes(column.key)">
+          <div v-else-if="['type', 'duration', 'call_duration'].includes(column.key)">
             <FeatherIcon :name="item.icon" class="h-3 w-3" />
           </div>
         </template>
@@ -128,7 +140,7 @@
                 })
             "
           />
-          <div v-else-if="column.key === 'duration'" class="truncate text-base">
+          <div v-else-if="['duration', 'call_duration'].includes(column.key)" class="truncate text-base">
             {{ label }}
           </div>
           <div
@@ -166,6 +178,7 @@
     :options="{
       rowCount: options.rowCount,
       totalCount: options.totalCount,
+      pageLengthOptions: ['20', '50', '100', '250', '500'],
     }"
     @loadMore="emit('loadMore')"
   />
@@ -181,6 +194,7 @@
 </template>
 <script setup>
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
+import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import ListBulkActions from '@/components/ListBulkActions.vue'
 import ListRows from '@/components/ListViews/ListRows.vue'
 import RatingInput from '@/components/Controls/RatingInput.vue'
@@ -225,7 +239,7 @@ const emit = defineEmits([
   'selectionsChanged',
 ])
 
-const pageLengthCount = defineModel({ type: Number })
+const pageLengthCount = defineModel({ type: [Number, String] })
 const list = defineModel('list', { type: Object })
 
 function getLabel(label, column) {
@@ -248,7 +262,7 @@ function isLiked(item) {
 
 watch(pageLengthCount, (val, old_value) => {
   if (val === old_value) return
-  emit('updatePageCount', val)
+  emit('updatePageCount', typeof val === 'string' ? parseInt(val, 10) : val)
 })
 
 const listBulkActionsRef = ref(null)

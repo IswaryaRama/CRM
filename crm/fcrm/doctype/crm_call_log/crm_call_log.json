@@ -28,7 +28,15 @@
   "end_time",
   "note",
   "section_break_kebz",
-  "links"
+  "links",
+  "column_break_for_lead",
+  "lead_name",
+  "organization",
+  "mobile_no",
+  "direction",
+  "call_date",
+  "call_time",
+  "call_flag"
  ],
  "fields": [
   {
@@ -149,12 +157,56 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Telephony Medium",
-   "options": "\nManual\nTwilio\nExotel",
+   "options": "\nManual\nTwilio\nExotel\nVobiz",
    "read_only": 1
   },
   {
    "fieldname": "section_break_gyqe",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_for_lead",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lead_name",
+   "fieldtype": "Data",
+   "label": "Lead Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "organization",
+   "fieldtype": "Data",
+   "label": "Organization",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "label": "Mobile No.",
+   "options": "Phone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "label": "Direction",
+   "options": "\ninbound\noutbound"
+  },
+  {
+   "fieldname": "call_date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "call_time",
+   "fieldtype": "Time",
+   "label": "Time"
+  },
+  {
+   "fieldname": "call_flag",
+   "fieldtype": "Data",
+   "label": "Flags"
   }
  ],
  "index_web_pages_for_search": 1,

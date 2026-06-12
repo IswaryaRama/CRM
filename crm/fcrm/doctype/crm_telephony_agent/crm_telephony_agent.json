@@ -16,6 +16,9 @@
   "call_receiving_device",
   "column_break_aydj",
   "exotel_number",
+  "vobiz_number",
+  "vobiz_username",
+  "vobiz_password",
   "section_break_phlq",
   "phone_nos"
  ],
@@ -56,6 +59,21 @@
    "label": "Exotel Number"
   },
   {
+   "fieldname": "vobiz_number",
+   "fieldtype": "Data",
+   "label": "WebRTC Number"
+  },
+  {
+   "fieldname": "vobiz_username",
+   "fieldtype": "Data",
+   "label": "WebRTC Username"
+  },
+  {
+   "fieldname": "vobiz_password",
+   "fieldtype": "Password",
+   "label": "WebRTC Password"
+  },
+  {
    "fieldname": "section_break_phlq",
    "fieldtype": "Section Break"
   },
@@ -82,7 +100,7 @@
    "fieldname": "default_medium",
    "fieldtype": "Select",
    "label": "Default Medium",
-   "options": "\nTwilio\nExotel"
+   "options": "\nTwilio\nExotel\nVobiz"
   },
   {
    "default": "Computer",

@@ -196,6 +196,26 @@
   </head>
   <body class="sm:overscroll-y-none no-scrollbar">
     <div id="app" class="h-full"></div>
+    <script>
+      (function() {
+        const _origFetch = window.fetch;
+        window.fetch = function(url, options) {
+          console.log('[Vobiz Patch] fetch called with:', url, options);
+          const isVobizTelemetry = options &&
+            options.method &&
+            options.method.toUpperCase() === 'POST' &&
+            typeof options.body === 'string' &&
+            options.body.includes('logs');
+
+          if (isVobizTelemetry) {
+            console.warn('[Vobiz Patch] Intercepted and blocked telemetry POST:', url || 'current page');
+            return Promise.resolve(new Response('{}', { status: 200 }));
+          }
+          return _origFetch.apply(this, arguments);
+        };
+      })();
+    </script>
+    <script src="https://unpkg.com/vobiz-webrtc-sdk@1.0.3/dist/vobiz-webrtc-sdk.min.js"></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

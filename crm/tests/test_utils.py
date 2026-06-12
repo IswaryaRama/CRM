@@ -2,7 +2,7 @@ import time
 from unittest.mock import patch
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase, UnitTestCase
 
 from crm.utils import (
 	_get_communication_status,
@@ -15,7 +15,7 @@ from crm.utils import (
 )
 
 
-class TestUtils(FrappeTestCase):
+class TestUtils(UnitTestCase):
 	def test_seconds_to_duration(self):
 		# 3661 seconds = 1 hour, 1 minute, and 1 second
 		self.assertEqual(seconds_to_duration(3661), "1h 1m 1s")
@@ -126,7 +126,7 @@ class TestUtils(FrappeTestCase):
 		self.assertEqual(result["country"], "IN")
 
 
-class TestUpdateModifiedTimestamp(FrappeTestCase):
+class TestUpdateModifiedTimestamp(IntegrationTestCase):
 	def setUp(self):
 		super().setUp()
 		# Patch frappe.enqueue to run update_modified_background synchronously in tests
@@ -290,7 +290,7 @@ class TestUpdateModifiedTimestamp(FrappeTestCase):
 		self.assertGreaterEqual(after, before)
 
 
-class TestUpdateCommunicationStatus(FrappeTestCase):
+class TestUpdateCommunicationStatus(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
@@ -439,7 +439,7 @@ class TestUpdateCommunicationStatus(FrappeTestCase):
 		self.assertEqual(status, "Open")
 
 
-class TestCreateLeadFromIncomingEmail(FrappeTestCase):
+class TestCreateLeadFromIncomingEmail(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()

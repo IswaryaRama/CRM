@@ -133,7 +133,7 @@ function getStandardItem(item) {
         icon: item.icon,
         label: __(item.label),
         onClick: () => (showSettings.value = true),
-        condition: () => !isMobileView.value,
+        condition: () => true,
       }
     case 'login_to_fc':
       return {

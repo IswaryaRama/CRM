@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
+from frappe.tests import IntegrationTestCase
 from frappe.utils.nestedset import rebuild_tree
 
 from crm.permissions.org_hierarchy import (
@@ -12,10 +12,8 @@ from crm.permissions.org_hierarchy import (
 	hierarchy_enabled,
 )
 
-TEST_USERS = ("manager@hier.test", "rep1@hier.test", "rep2@hier.test", "outsider@hier.test")
 
-
-class TestOrgHierarchy(FrappeTestCase):
+class TestOrgHierarchy(IntegrationTestCase):
 	"""
 	Hierarchy structure used in tests:
 	  manager@hier.test  (root)
@@ -43,23 +41,15 @@ class TestOrgHierarchy(FrappeTestCase):
 		settings.enable_sales_hierarchy = 1
 		settings.save(ignore_permissions=True)
 
-		# Persist the fixtures as a baseline. Inserting CRM Lead/Deal commits
-		# (after_insert assigns/shares the record), so per-test isolation relies
-		# on explicit cleanup rather than a rollback.
-		frappe.db.commit()  # nosemgrep: fixtures must persist across the committing after_insert hooks
-
 	@classmethod
 	def tearDownClass(cls):
-		delete_test_documents()
-		for email in TEST_USERS:
-			frappe.db.delete("CRM Sales Hierarchy", {"user": email})
-			frappe.delete_doc("User", email, force=True, ignore_permissions=True)
-		frappe.db.commit()  # nosemgrep: persist teardown cleanup of committed fixtures
 		super().tearDownClass()
 
+	def setUp(self):
+		frappe.db.savepoint("test_org_hierarchy")
+
 	def tearDown(self):
-		delete_test_documents()
-		frappe.db.commit()  # nosemgrep: persist per-test cleanup of committed fixtures
+		frappe.db.rollback(save_point="test_org_hierarchy")
 
 	# ------------------------------------------------------------------
 	# hierarchy_enabled
@@ -167,13 +157,6 @@ class TestOrgHierarchy(FrappeTestCase):
 		finally:
 			settings.enable_sales_hierarchy = 1
 			settings.save(ignore_permissions=True)
-
-
-def delete_test_documents():
-	"""Remove leads/deals/assignments created by the test users."""
-	frappe.db.delete("ToDo", {"allocated_to": ("in", TEST_USERS)})
-	frappe.db.delete("CRM Deal", {"deal_owner": ("in", TEST_USERS)})
-	frappe.db.delete("CRM Lead", {"lead_owner": ("in", TEST_USERS)})
 
 
 def make_user(email, roles=None):

@@ -30,66 +30,149 @@ This customized Frappe CRM application supercharges standard sales operations by
 
 ---
 
-## Installation & Setup
+## Installation & Setup (Windows / WSL 2)
 
-This repository is pre-configured to run inside a Docker environment with automated scripting for local development orchestration.
+> [!IMPORTANT]
+> **WSL 2 (specifically Ubuntu)** is the highly recommended and supported environment for running this application on Windows. The orchestration scripts and backend containers run within WSL, bridging seamlessly to the Windows host.
+
+This repository is optimized for development on Windows systems using **WSL 2** with either **Docker Desktop** or **native Docker Engine** installed inside WSL. Follow these steps to start your environment:
 
 ### Prerequisites
-Make sure you have the following installed on your host system:
-* **Docker** and **Docker Compose**
-* **Node.js** (v18+) and **npm** or **yarn** (for running the frontend dev server on the host)
-* **tmux** (required by the automated orchestration script)
+1. **Docker**:
+   * **Option A (Recommended)**: Docker Desktop running on Windows with WSL 2 integration enabled.
+   * **Option B (Native)**: Native Docker Engine installed inside WSL 2. Ensure the Docker daemon is started:
+     ```bash
+     sudo service docker start
+     ```
+2. **MongoDB**: Ensure MongoDB is running on your Windows host (default port `27017`).
+3. **WSL 2 Terminal**: Open your WSL terminal (e.g., Ubuntu) to run all backend and orchestration commands.
+4. **Node.js**: Install Node.js (v18+) inside WSL for frontend development.
 
 ---
 
 ### Step-by-Step Launch
 
-#### Step 1: Start Backend Services
-Run Docker Compose from the root directory to spin up MariaDB, Redis, and the Frappe bench container:
-```bash
-docker compose up -d
-```
+You can run the setup commands either directly from your **WSL 2 Terminal** or from **Windows PowerShell** (using the `wsl` prefix).
+
+#### Step 1: Clone the Repository & Navigate
+Clone the repository using Git and navigate into the project directory:
+* **WSL 2 Terminal / PowerShell**:
+  ```bash
+  git clone https://github.com/hitloop-ai/aiprof-frappe-crm.git
+  cd aiprof-frappe-crm
+  ```
+
+#### Step 2: Start Docker Containers
+Ensure your Docker service/daemon is running, then spin up the backend containers:
+* **WSL 2 Terminal**:
+  ```bash
+  docker compose -f docker/docker-compose.yml up -d
+  ```
+* **Windows PowerShell**:
+  ```powershell
+  wsl docker compose -f docker/docker-compose.yml up -d
+  ```
 > [!NOTE]
-> On the first run, the initialization script ([docker/init.sh](file:///home/satheesh/aiprof_crm/docker/init.sh)) will automatically initialize the Frappe bench, symlink the CRM application, and create the development site `crm.localhost`.
+> On the first run, the containers will take a few minutes to download images and initialize. The site will be created automatically inside the container as `crm.localhost`.
 
-* **Backend URL**: `http://localhost:8005` (routes internally to `crm.localhost`)
-* **Default Credentials**:
-  * **Username**: `Administrator`
-  * **Password**: `admin`
+#### Step 3: Install Frontend Dependencies (First time only)
+* **WSL 2 Terminal**:
+  ```bash
+  cd frontend && npm install && cd ..
+  ```
+* **Windows PowerShell**:
+  ```powershell
+  wsl -e bash -c "cd frontend && npm install"
+  ```
 
-#### Step 2: Install Frontend Dependencies
-Navigate to the `frontend/` directory and install the packages:
-```bash
-cd frontend
-npm install # or yarn install
+#### Step 4: Run the Development Environment
+
+You can start the environment using either the automated script (highly recommended) or run it manually.
+
+##### Option A: Automated Script (Recommended)
+* **WSL 2 Terminal**:
+  ```bash
+  ./start-crm.sh
+  ```
+* **Windows PowerShell**:
+  ```powershell
+  wsl ./start-crm.sh
+  ```
+
+##### Option B: Manual Execution (Alternative)
+If you prefer running the dev server directly in your current terminal window instead of a background tmux session:
+* **WSL 2 Terminal**:
+  ```bash
+  cd frontend && npm run dev -- --host
+  ```
+* **Windows PowerShell**:
+  ```powershell
+  wsl -e bash -c "cd frontend && npm run dev -- --host"
+  ```
+*(Note: If you run manually, you will also need to start the Windows MongoDB proxy and register the tunnel webhook URL manually if you need telephony integration.)*
+
+This script automatically handles:
+1. **WSL-Windows Networking**: Resolves your Windows host IP address and writes it to `scratch/wsl_ip.txt`.
+2. **MongoDB Proxy**: Launches the background Python proxy on your Windows host on port `27018` to bridge the WSL Docker container to your host's local MongoDB (port `27017`), allowing call logs to sync.
+3. **Vite Frontend**: Starts the Vite dev server inside WSL.
+4. **Tunnels & Webhooks**: Starts a public tunnel (`localhost.run`) and registers the dynamic tunnel endpoint directly with Vobiz so outgoing/incoming calls work.
+5. **tmux Session**: Orchestrates these services inside a tmux session named `crm`.
+
+##### tmux Controls:
+* `Ctrl+B 0` &rarr; View the Vite dev server logs.
+* `Ctrl+B 1` &rarr; View the localtunnel logs (backup tunnel).
+* `Ctrl+B 2` &rarr; View the localhost.run tunnel logs (active tunnel).
+* `Ctrl+B d` &rarr; Detach from tmux (everything keeps running in the background!).
+
+To check the active tunnel URL later or re-register it:
+* **WSL 2 Terminal**:
+  ```bash
+  ./show-tunnel.sh
+  ```
+* **Windows PowerShell**:
+  ```powershell
+  wsl ./show-tunnel.sh
+  ```
+
+#### Step 5: Open in Browser
+Open your Windows browser and navigate to:
 ```
-
-#### Step 3: Run the Development Environment
-Start the unified frontend and tunnel environment from the root directory:
-```bash
-./start-crm.sh
+http://localhost:8085
 ```
-This script automates the full environment setup:
-1. Launches the Vite development server on port `8085`.
-2. Spins up public tunnels using **localtunnel** and **localhost.run** to expose port `8085`.
-3. Updates the container's `site_config.json` with the active public URL.
-4. Auto-registers the webhook URL in **CRM Vobiz Settings** so Vobiz voice events route directly back to your local container.
-5. Launches a **tmux** session named `crm` containing three windows:
-   * **Window 0 (`dev`)**: Vite dev server (`http://localhost:8085`)
-   * **Window 1 (`localtunnel`)**: Localtunnel client
-   * **Window 2 (`localhost_run`)**: Localhost.run SSH tunnel client
+> [!TIP]
+> If `localhost` fails to connect from Windows (which can happen with native WSL Docker networking), use your WSL IP instead:
+> * **WSL 2 Terminal**:
+>   ```bash
+>   hostname -I | awk '{print $1}'
+>   ```
+> * **Windows PowerShell**:
+>   ```powershell
+>   wsl hostname -I
+>   ```
+> Then open `http://<WSL_IP>:8085` in your Windows browser.
 
-##### tmux Commands:
-* `Ctrl+B 0` &rarr; Switch to the dev server console.
-* `Ctrl+B 1` &rarr; Switch to the localtunnel client logs.
-* `Ctrl+B 2` &rarr; Switch to the localhost.run client logs.
-* `Ctrl+B d` &rarr; Detach from the session (keeps everything running in the background).
+---
 
-#### Step 4: Register Telephony Webhook 
-If you want to manually update or register your webhook URL with Vobiz (for example, when using a specific localtunnel URL):
-```bash
-./show-tunnel.sh https://new-tunnel-url.loca.lt
-```
-This updates the webhook URL in **CRM Vobiz Settings** and registers it with the Vobiz telephony API.
+### Stopping the Environment
+
+To stop all background processes (tunnels, dev server, proxy) and kill the tmux session:
+* **WSL 2 Terminal**:
+  ```bash
+  tmux kill-session -t crm
+  ```
+* **Windows PowerShell**:
+  ```powershell
+  wsl tmux kill-session -t crm
+  ```
+
+To stop the Docker containers:
+* **WSL 2 Terminal**:
+  ```bash
+  docker compose -f docker/docker-compose.yml down
+  ```
+* **Windows PowerShell**:
+  ```powershell
+  wsl docker compose -f docker/docker-compose.yml down
+  ```
 
 ---

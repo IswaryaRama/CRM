@@ -8,10 +8,12 @@ import { ref } from 'vue'
 const hours = ref(0)
 const minutes = ref(0)
 const seconds = ref(0)
+const totalSeconds = ref(0)
 const timer = ref(null)
 const updatedTime = ref('0:00')
 
 function startCounter() {
+  totalSeconds.value++
   updatedTime.value = getTime()
 }
 
@@ -22,11 +24,13 @@ function start() {
 function stop() {
   clearInterval(timer.value)
   let output = updatedTime.value
+  let elapsed = totalSeconds.value
   hours.value = 0
   minutes.value = 0
   seconds.value = 0
+  totalSeconds.value = 0
   updatedTime.value = '0:00'
-  return output
+  return { output, totalSeconds: elapsed }
 }
 
 function getTime(_seconds = 0) {
@@ -78,5 +82,5 @@ function getTime(_seconds = 0) {
   return hoursCount + minutesCount + ':' + secondsCount
 }
 
-defineExpose({ start, stop, getTime, updatedTime })
+defineExpose({ start, stop, getTime, updatedTime, totalSeconds })
 </script>
