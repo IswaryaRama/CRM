@@ -1,4 +1,4 @@
-<img width="959" height="398" alt="image" src="https://github.com/user-attachments/assets/80272d7e-c029-4377-97a7-f8043bf9cb74" /><div align="center">
+
   <a href="https://github.com/hitloop-ai/aiprof-frappe-crm">
     <img src=".github/logo.svg" height="80" alt="Frappe CRM Logo">
   </a>
