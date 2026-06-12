@@ -1,4 +1,4 @@
-<div align="center">
+<img width="959" height="398" alt="image" src="https://github.com/user-attachments/assets/80272d7e-c029-4377-97a7-f8043bf9cb74" /><div align="center">
   <a href="https://github.com/hitloop-ai/aiprof-frappe-crm">
     <img src=".github/logo.svg" height="80" alt="Frappe CRM Logo">
   </a>
@@ -30,33 +30,33 @@ This customized Frappe CRM application supercharges standard sales operations by
 
 ---
 
-## Installation & Setup (Windows / WSL 2)
+## Installation & Setup (Windows / Linux)
 
 > [!IMPORTANT]
-> **WSL 2 (specifically Ubuntu)** is the highly recommended and supported environment for running this application on Windows. The orchestration scripts and backend containers run within WSL, bridging seamlessly to the Windows host.
+> **Linux (specifically Ubuntu)** is the highly recommended and supported environment for running this application on Windows. The orchestration scripts and backend containers run within WSL, bridging seamlessly to the Windows host.
 
-This repository is optimized for development on Windows systems using **WSL 2** with either **Docker Desktop** or **native Docker Engine** installed inside WSL. Follow these steps to start your environment:
+This repository is optimized for development on Windows systems using **Linux** with either **Docker Desktop** or **native Docker Engine** installed inside WSL. Follow these steps to start your environment:
 
 ### Prerequisites
 1. **Docker**:
-   * **Option A (Recommended)**: Docker Desktop running on Windows with WSL 2 integration enabled.
-   * **Option B (Native)**: Native Docker Engine installed inside WSL 2. Ensure the Docker daemon is started:
+   * **Option A (Recommended)**: Docker Desktop running on Windows with Linux integration enabled.
+   * **Option B (Native)**: Native Docker Engine installed inside Linux. Ensure the Docker daemon is started:
      ```bash
      sudo service docker start
      ```
 2. **MongoDB**: Ensure MongoDB is running on your Windows host (default port `27017`).
-3. **WSL 2 Terminal**: Open your WSL terminal (e.g., Ubuntu) to run all backend and orchestration commands.
+3. **Linux Terminal**: Open your WSL terminal (e.g., Ubuntu) to run all backend and orchestration commands.
 4. **Node.js**: Install Node.js (v18+) inside WSL for frontend development.
 
 ---
 
 ### Step-by-Step Launch
 
-You can run the setup commands either directly from your **WSL 2 Terminal** or from **Windows PowerShell** (using the `wsl` prefix).
+You can run the setup commands either directly from your **Linux Terminal** or from **Windows PowerShell** (using the `wsl` prefix).
 
 #### Step 1: Clone the Repository & Navigate
 Clone the repository using Git and navigate into the project directory:
-* **WSL 2 Terminal / PowerShell**:
+* **Linux Terminal / PowerShell**:
   ```bash
   git clone https://github.com/hitloop-ai/aiprof-frappe-crm.git
   cd aiprof-frappe-crm
@@ -64,7 +64,7 @@ Clone the repository using Git and navigate into the project directory:
 
 #### Step 2: Start Docker Containers
 Ensure your Docker service/daemon is running, then spin up the backend containers:
-* **WSL 2 Terminal**:
+* **Linux Terminal**:
   ```bash
   docker compose -f docker/docker-compose.yml up -d
   ```
@@ -76,7 +76,7 @@ Ensure your Docker service/daemon is running, then spin up the backend container
 > On the first run, the containers will take a few minutes to download images and initialize. The site will be created automatically inside the container as `crm.localhost`.
 
 #### Step 3: Install Frontend Dependencies (First time only)
-* **WSL 2 Terminal**:
+* **Linux Terminal**:
   ```bash
   cd frontend && npm install && cd ..
   ```
@@ -90,7 +90,7 @@ Ensure your Docker service/daemon is running, then spin up the backend container
 You can start the environment using either the automated script (highly recommended) or run it manually.
 
 ##### Option A: Automated Script (Recommended)
-* **WSL 2 Terminal**:
+* **Linux 2 Terminal**:
   ```bash
   ./start-crm.sh
   ```
@@ -101,7 +101,7 @@ You can start the environment using either the automated script (highly recommen
 
 ##### Option B: Manual Execution (Alternative)
 If you prefer running the dev server directly in your current terminal window instead of a background tmux session:
-* **WSL 2 Terminal**:
+* **Linux 2 Terminal**:
   ```bash
   cd frontend && npm run dev -- --host
   ```
@@ -112,7 +112,7 @@ If you prefer running the dev server directly in your current terminal window in
 *(Note: If you run manually, you will also need to start the Windows MongoDB proxy and register the tunnel webhook URL manually if you need telephony integration.)*
 
 This script automatically handles:
-1. **WSL-Windows Networking**: Resolves your Windows host IP address and writes it to `scratch/wsl_ip.txt`.
+1. **Linux-Windows Networking**: Resolves your Windows host IP address and writes it to `scratch/wsl_ip.txt`.
 2. **MongoDB Proxy**: Launches the background Python proxy on your Windows host on port `27018` to bridge the WSL Docker container to your host's local MongoDB (port `27017`), allowing call logs to sync.
 3. **Vite Frontend**: Starts the Vite dev server inside WSL.
 4. **Tunnels & Webhooks**: Starts a public tunnel (`localhost.run`) and registers the dynamic tunnel endpoint directly with Vobiz so outgoing/incoming calls work.
@@ -125,7 +125,7 @@ This script automatically handles:
 * `Ctrl+B d` &rarr; Detach from tmux (everything keeps running in the background!).
 
 To check the active tunnel URL later or re-register it:
-* **WSL 2 Terminal**:
+* **Linux Terminal**:
   ```bash
   ./show-tunnel.sh
   ```
@@ -141,7 +141,7 @@ http://localhost:8085
 ```
 > [!TIP]
 > If `localhost` fails to connect from Windows (which can happen with native WSL Docker networking), use your WSL IP instead:
-> * **WSL 2 Terminal**:
+> * **Linux Terminal**:
 >   ```bash
 >   hostname -I | awk '{print $1}'
 >   ```
@@ -166,7 +166,7 @@ To stop all background processes (tunnels, dev server, proxy) and kill the tmux 
   ```
 
 To stop the Docker containers:
-* **WSL 2 Terminal**:
+* **Linux Terminal**:
   ```bash
   docker compose -f docker/docker-compose.yml down
   ```
