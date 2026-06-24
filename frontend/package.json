@@ -10,7 +10,8 @@
     "serve": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "postinstall": "node postinstall-patch.cjs"
   },
   "dependencies": {
     "@tiptap/extension-paragraph": "^2.12.0",
