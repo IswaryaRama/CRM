@@ -19,6 +19,16 @@ const patches = [
     find: 'const response = await fetch(url)',
     replace: "const response = await fetch(url, { credentials: 'include' })",
   },
+  {
+    file: 'node_modules/frappe-ui/src/utils/fileUploadHandler.ts',
+    find: "xhr.open('POST', uploadEndpoint, true)",
+    replace: "xhr.open('POST', uploadEndpoint, true)\\n      xhr.withCredentials = true",
+  },
+  {
+    file: 'node_modules/frappe-ui/frappe/DataImport/UploadStep.vue',
+    find: "exportFields = { [props.doctype || props.data?.reference_doctype as string]: ['name'] }",
+    replace: `let defaultFields = ['name'];\\n        if (props.doctype === 'CRM Lead') {\\n            defaultFields = ['name', 'first_name', 'last_name', 'status', 'email', 'mobile_no', 'company_name', 'territory', 'source', 'campaign'];\\n        } else if (props.doctype === 'CRM Deal') {\\n            defaultFields = ['name', 'deal_name', 'status', 'amount', 'organization', 'contact'];\\n        }\\n        exportFields = { [props.doctype || props.data?.reference_doctype as string]: defaultFields }`,
+  }
 ]
 
 let patchedCount = 0
