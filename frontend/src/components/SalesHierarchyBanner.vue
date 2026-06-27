@@ -17,7 +17,7 @@
       </button>
     </div>
     <div class="text-ink-gray-7 text-p-sm">
-      {{ __('We are changing how permissions work in Frappe CRM') }}
+      {{ __('We are changing how permissions work in AiProf CRM') }}
     </div>
     <Button :label="__('Learn more')" @click="openBlog">
       <template #suffix>

@@ -39,7 +39,7 @@ class CRMInvitation(Document):
 		if frappe.local.dev_server:
 			print(f"Invite link for {self.email}: {invite_link}")  # nosemgrep
 
-		title = "Frappe CRM"
+		title = "AIProf CRM"
 		template = "crm_invitation"
 
 		frappe.sendmail(

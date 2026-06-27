@@ -159,7 +159,9 @@ class CRMDeal(Document):
 					# the agent is already set as an assignee
 					return
 
-		assign({"assign_to": [agent], "doctype": "CRM Deal", "name": self.name}, ignore_permissions=True)
+		frappe.set_user("Administrator")
+		assign({"assign_to": [agent], "doctype": "CRM Deal", "name": self.name, "ignore_permissions": True})
+		frappe.set_user(frappe.session.user)
 
 	def share_with_agent(self, agent):
 		if not agent:

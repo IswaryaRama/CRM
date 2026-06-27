@@ -284,10 +284,10 @@ function parseRows(rows, columns = []) {
 
       if (
         fieldType &&
-        ['Date', 'Datetime'].includes(fieldType) &&
+        ['Date', 'Datetime', 'Time'].includes(fieldType) &&
         !['modified', 'creation', 'due_date'].includes(row)
       ) {
-        _rows[row] = formatDate(task[row], '', true, fieldType == 'Datetime')
+        _rows[row] = formatDate(task[row], '', fieldType !== 'Time', fieldType !== 'Date')
       }
 
       if (fieldType && fieldType == 'Currency') {

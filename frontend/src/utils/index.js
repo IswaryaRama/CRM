@@ -35,6 +35,17 @@ export function formatTime(seconds) {
 
 export function formatDate(date, format, onlyDate = false, onlyTime = false) {
   if (!date) return ''
+  if (typeof date === 'string') {
+    let match = date.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2})(?:\.(\d+))?$/)
+    if (match) {
+      let h = match[1].padStart(2, '0')
+      let m = match[2].padStart(2, '0')
+      let s = match[3].padStart(2, '0')
+      date = `2000-01-01 ${h}:${m}:${s}`
+    } else if (/^\d{2}:\d{2}:\d{2}/.test(date)) {
+      date = `2000-01-01 ${date}`
+    }
+  }
   format = getFormat(date, format, onlyDate, onlyTime, false)
   return dayjsLocal(date).format(format)
 }

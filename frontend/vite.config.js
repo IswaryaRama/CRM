@@ -33,8 +33,8 @@ export default defineConfig(async ({ mode }) => {
         },
         manifest: {
           display: 'standalone',
-          name: 'Frappe CRM',
-          short_name: 'Frappe CRM',
+          name: 'AiProf CRM',
+          short_name: 'AiProf CRM',
           start_url: '/crm',
           description:
             'Modern & 100% Open-source CRM tool to supercharge your sales operations',
@@ -104,11 +104,15 @@ export default defineConfig(async ({ mode }) => {
           configure: (proxy, _options) => {
             proxy.on('proxyReqWs', (proxyReq, req, _socket, _options, _head) => {
               const host = req.headers.host.split(':')[0]
-              proxyReq.setHeader('Origin', `http://${host}:8000`)
+              const proto = req.headers['x-forwarded-proto'] || 'http'
+              const origin = proto === 'https' ? `https://${host}` : `http://${host}:8000`
+              proxyReq.setHeader('Origin', origin)
             })
             proxy.on('proxyReq', (proxyReq, req, _res, _options) => {
               const host = req.headers.host.split(':')[0]
-              proxyReq.setHeader('Origin', `http://${host}:8000`)
+              const proto = req.headers['x-forwarded-proto'] || 'http'
+              const origin = proto === 'https' ? `https://${host}` : `http://${host}:8000`
+              proxyReq.setHeader('Origin', origin)
             })
           },
         },

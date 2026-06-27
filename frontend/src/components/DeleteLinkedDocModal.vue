@@ -91,7 +91,7 @@
             variant="solid"
             icon-left="trash-2"
             :label="__('Delete')"
-            :loading="isDealCreating"
+            :loading="isDeleting"
             theme="red"
             @click="deleteDoc()"
           />
@@ -138,7 +138,7 @@ import { computed, ref } from 'vue'
 const show = defineModel({ type: Boolean })
 const router = useRouter()
 const props = defineProps({
-  name: { type: String, required: true },
+  name: { type: String, default: '' },
   doctype: { type: String, required: true },
   docname: { type: String, required: true },
   reload: { type: Function, default: null },
@@ -248,12 +248,23 @@ const removeDocLinks = () => {
   viewControls.value.updateSelections([])
 }
 
+const isDeleting = ref(false)
 const deleteDoc = async () => {
-  await call('frappe.client.delete', {
-    doctype: props.doctype,
-    name: props.docname,
-  })
-  router.push({ name: props.name })
-  props?.reload?.()
+  try {
+    isDeleting.value = true
+    await call('frappe.client.delete', {
+      doctype: props.doctype,
+      name: props.docname,
+    })
+    show.value = false
+    if (props.name) {
+      router.push({ name: props.name })
+    }
+    props?.reload?.()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isDeleting.value = false
+  }
 }
 </script>

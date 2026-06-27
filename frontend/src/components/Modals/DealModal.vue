@@ -132,9 +132,9 @@ const tabs = createResource({
   auto: true,
   transform: (_tabs) => {
     hasOrganizationSections.value = false
-    return _tabs.forEach((tab) => {
-      tab.sections.forEach((section) => {
-        section.columns.forEach((column) => {
+    _tabs?.forEach((tab) => {
+      tab.sections?.forEach((section) => {
+        section.columns?.forEach((column) => {
           if (
             ['organization_section', 'organization_details_section'].includes(
               section.name,
@@ -148,7 +148,7 @@ const tabs = createResource({
           ) {
             hasContactSections.value = true
           }
-          column.fields.forEach((field) => {
+          column.fields?.forEach((field) => {
             if (field.fieldname == 'status') {
               field.fieldtype = 'Select'
               field.options = dealStatuses.value
@@ -162,6 +162,7 @@ const tabs = createResource({
         })
       })
     })
+    return _tabs
   },
 })
 

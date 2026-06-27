@@ -26,88 +26,11 @@
     :filters="{ converted: 0 }"
     :options="{
       allowedViews: ['list', 'group_by', 'kanban'],
-      hideFilterButton: true,
+      hideFilterButton: false,
       hideSortButton: true,
     }"
   />
-  <div 
-    v-if="leads.data"
-    class="mx-5 mb-4 p-4 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-gray-100 dark:border-gray-800 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-sm transition-all duration-300"
-  >
-    <!-- Left Side: Quick Filters -->
-    <div class="flex flex-wrap items-center gap-6">
-      <!-- Direction Filter -->
-      <div class="flex flex-col gap-1.5">
-        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ __('Direction') }}</span>
-        <div class="flex bg-gray-100/80 dark:bg-gray-800/80 p-0.5 rounded-lg border border-gray-200/40 dark:border-gray-700/40">
-          <button 
-            v-for="dir in ['all', 'inbound', 'outbound']" 
-            :key="dir"
-            @click="setDirectionFilter(dir)"
-            :class="[
-              'px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 capitalize',
-              activeDirection === dir 
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            ]"
-          >
-            {{ __(dir) }}
-          </button>
-        </div>
-      </div>
 
-      <!-- Flags Filter -->
-      <div class="flex flex-col gap-1.5 min-w-[160px]">
-        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ __('Filter by Flag') }}</span>
-        <select 
-          :value="activeFlag"
-          @change="setFlagFilter($event.target.value)"
-          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-        >
-          <option value="">{{ __('All Flags') }}</option>
-          <option v-for="flag in uniqueFlags" :key="flag" :value="flag">{{ flag }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Right Side: Quick Sort -->
-    <div class="flex items-center gap-6">
-      <!-- Sort By Field -->
-      <div class="flex flex-col gap-1.5">
-        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ __('Sort By') }}</span>
-        <div class="flex items-center gap-2">
-          <div class="flex bg-gray-100/80 dark:bg-gray-800/80 p-0.5 rounded-lg border border-gray-200/40 dark:border-gray-700/40">
-            <button 
-              v-for="s in [
-                { label: 'Date', field: 'call_date' },
-                { label: 'Name', field: 'lead_name' }
-              ]" 
-              :key="s.field"
-              @click="setSortField(s.field)"
-              :class="[
-                'px-3 py-1 text-sm font-medium rounded-md transition-all duration-200',
-                activeSortField === s.field 
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-              ]"
-            >
-              {{ __(s.label) }}
-            </button>
-          </div>
-          <button 
-            @click="toggleSortDirection"
-            class="p-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg border border-gray-200/40 dark:border-gray-700/40 transition-all duration-200 flex items-center justify-center"
-            :title="activeSortDirection === 'asc' ? __('Ascending') : __('Descending')"
-          >
-            <component 
-              :is="activeSortDirection === 'asc' ? AscendingIcon : DesendingIcon" 
-              class="h-4 w-4 text-gray-600 dark:text-gray-400"
-            />
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
   <KanbanView
     v-if="route.params.viewType == 'kanban'"
     v-model="leads"
@@ -516,99 +439,121 @@ function parseRows(rows, columns = []) {
   return rows.map((lead) => {
     let _rows = {}
     leads.value?.data.rows.forEach((row) => {
-      _rows[row] = lead[row]
+      try {
+        _rows[row] = lead[row]
 
-      let fieldType = columns?.find((col) => (col[key] || col.value) == row)?.[
-        type
-      ]
+        let fieldType = columns?.find((col) => (col[key] || col.value) == row)?.[
+          type
+        ]
 
-      if (
-        fieldType &&
-        ['Date', 'Datetime'].includes(fieldType) &&
-        !['modified', 'creation'].includes(row)
-      ) {
-        _rows[row] = formatDate(lead[row], '', true, fieldType == 'Datetime')
-      }
-
-      if (fieldType && fieldType == 'Currency') {
-        _rows[row] = getFormattedCurrency(row, lead)
-      }
-
-      if (fieldType && fieldType == 'Float') {
-        _rows[row] = getFormattedFloat(row, lead)
-      }
-
-      if (fieldType && fieldType == 'Percent') {
-        _rows[row] = getFormattedPercent(row, lead)
-      }
-
-      if (row == 'lead_name') {
-        _rows[row] = {
-          label: lead.lead_name,
-          image: lead.image,
-          image_label: lead.first_name,
-        }
-      } else if (row == 'organization') {
-        _rows[row] = lead.organization
-      } else if (row === 'website') {
-        _rows[row] = website(lead.website)
-      } else if (row == 'status') {
-        _rows[row] = {
-          label: lead.status,
-          color: getLeadStatus(lead.status)?.color,
-        }
-      } else if (row == 'sla_status') {
-        let value = lead.sla_status
-        let tooltipText = value
-        let color =
-          lead.sla_status == 'Failed'
-            ? 'red'
-            : lead.sla_status == 'Fulfilled'
-              ? 'green'
-              : 'orange'
-        if (value == 'First Response Due' || value == 'Rolling Response Due') {
-          value = __(timeAgo(lead.response_by))
-          tooltipText = formatDate(lead.response_by)
-          if (new Date(lead.response_by) < new Date()) {
-            color = 'red'
+        if (
+          fieldType &&
+          ['Date', 'Datetime', 'Time'].includes(fieldType) &&
+          !['modified', 'creation'].includes(row)
+        ) {
+          try {
+            _rows[row] = lead[row] ? formatDate(lead[row], '', fieldType !== 'Time', fieldType !== 'Date') : ''
+          } catch (e) {
+            _rows[row] = lead[row] || ''
           }
         }
-        _rows[row] = {
-          label: tooltipText,
-          value: value,
-          color: color,
+
+        if (fieldType && fieldType == 'Currency') {
+          _rows[row] = getFormattedCurrency(row, lead)
         }
-      } else if (row == 'lead_owner') {
-        _rows[row] = {
-          label: lead.lead_owner && getUser(lead.lead_owner).full_name,
-          ...(lead.lead_owner && getUser(lead.lead_owner)),
+
+        if (fieldType && fieldType == 'Float') {
+          _rows[row] = getFormattedFloat(row, lead)
         }
-      } else if (row == '_assign') {
-        let assignees = JSON.parse(lead._assign || '[]')
-        _rows[row] = assignees.map((user) => ({
-          name: user,
-          image: getUser(user).user_image,
-          label: getUser(user).full_name,
-        }))
-      } else if (['modified', 'creation'].includes(row)) {
-        _rows[row] = {
-          label: formatDate(lead[row]),
-          timeAgo: __(timeAgo(lead[row])),
+
+        if (fieldType && fieldType == 'Percent') {
+          _rows[row] = getFormattedPercent(row, lead)
         }
-      } else if (
-        ['first_response_time', 'first_responded_on', 'response_by'].includes(
-          row,
-        )
-      ) {
-        let field = row == 'response_by' ? 'response_by' : 'first_responded_on'
-        _rows[row] = {
-          label: lead[field] ? formatDate(lead[field]) : '',
-          timeAgo: lead[row]
-            ? row == 'first_response_time'
-              ? formatTime(lead[row])
-              : __(timeAgo(lead[row]))
-            : '',
+
+        if (row == 'lead_name') {
+          _rows[row] = {
+            label: lead.lead_name,
+            image: lead.image,
+            image_label: lead.first_name,
+          }
+        } else if (row == 'organization') {
+          _rows[row] = lead.organization
+        } else if (row === 'website') {
+          _rows[row] = website(lead.website)
+        } else if (row == 'status') {
+          _rows[row] = {
+            label: lead.status,
+            color: getLeadStatus(lead.status)?.color,
+          }
+        } else if (row == 'sla_status') {
+          let value = lead.sla_status
+          let tooltipText = value
+          let color =
+            lead.sla_status == 'Failed'
+              ? 'red'
+              : lead.sla_status == 'Fulfilled'
+                ? 'green'
+                : 'orange'
+          if (value == 'First Response Due' || value == 'Rolling Response Due') {
+            try {
+              value = __(timeAgo(lead.response_by))
+              tooltipText = formatDate(lead.response_by)
+            } catch (e) {
+              value = lead.response_by || ''
+              tooltipText = lead.response_by || ''
+            }
+            if (lead.response_by && new Date(lead.response_by) < new Date()) {
+              color = 'red'
+            }
+          }
+          _rows[row] = {
+            label: tooltipText,
+            value: value,
+            color: color,
+          }
+        } else if (row == 'lead_owner') {
+          _rows[row] = {
+            label: lead.lead_owner && getUser(lead.lead_owner).full_name,
+            ...(lead.lead_owner && getUser(lead.lead_owner)),
+          }
+        } else if (row == '_assign') {
+          let assignees = JSON.parse(lead._assign || '[]')
+          _rows[row] = assignees.map((user) => ({
+            name: user,
+            image: getUser(user).user_image,
+            label: getUser(user).full_name,
+          }))
+        } else if (['modified', 'creation'].includes(row)) {
+          try {
+            _rows[row] = {
+              label: lead[row] ? formatDate(lead[row]) : '',
+              timeAgo: lead[row] ? __(timeAgo(lead[row])) : '',
+            }
+          } catch (e) {
+            _rows[row] = { label: lead[row] || '', timeAgo: '' }
+          }
+        } else if (
+          ['first_response_time', 'first_responded_on', 'response_by'].includes(
+            row,
+          )
+        ) {
+          let field = row == 'response_by' ? 'response_by' : 'first_responded_on'
+          try {
+            _rows[row] = {
+              label: lead[field] ? formatDate(lead[field]) : '',
+              timeAgo: lead[row]
+                ? row == 'first_response_time'
+                  ? formatTime(lead[row])
+                  : __(timeAgo(lead[row]))
+                : '',
+            }
+          } catch (e) {
+            _rows[row] = { label: lead[field] || '', timeAgo: '' }
+          }
         }
+      } catch (e) {
+        // Fallback: use raw value if any formatting fails
+        _rows[row] = _rows[row] || lead[row] || ''
       }
     })
     _rows['_email_count'] = lead._email_count

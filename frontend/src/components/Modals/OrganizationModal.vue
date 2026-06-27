@@ -127,10 +127,10 @@ const tabs = createResource({
   params: { doctype: 'CRM Organization', type: 'Quick Entry' },
   auto: true,
   transform: (_tabs) => {
-    return _tabs.forEach((tab) => {
-      tab.sections.forEach((section) => {
-        section.columns.forEach((column) => {
-          column.fields.forEach((field) => {
+    _tabs?.forEach((tab) => {
+      tab.sections?.forEach((section) => {
+        section.columns?.forEach((column) => {
+          column.fields?.forEach((field) => {
             if (field.fieldname == 'address') {
               field.create = (value, close) => {
                 organization.doc.address = value
@@ -145,6 +145,7 @@ const tabs = createResource({
         })
       })
     })
+    return _tabs
   },
 })
 

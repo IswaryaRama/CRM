@@ -105,10 +105,10 @@ const rows = computed(() => {
 
       if (
         fieldType &&
-        ['Date', 'Datetime'].includes(fieldType) &&
+        ['Date', 'Datetime', 'Time'].includes(fieldType) &&
         !['modified', 'creation'].includes(row)
       ) {
-        _rows[row] = formatDate(contact[row], '', true, fieldType == 'Datetime')
+        _rows[row] = formatDate(contact[row], '', fieldType !== 'Time', fieldType !== 'Date')
       }
 
       if (fieldType && fieldType == 'Currency') {

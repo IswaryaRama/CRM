@@ -1,6 +1,6 @@
 
   <a href="https://github.com/hitloop-ai/aiprof-frappe-crm">
-    <img src=".github/logo.svg" height="80" alt="Frappe CRM Logo">
+    <img src=".github/logo.png" height="80" alt="Frappe CRM Logo">
   </a>
   <h1>Frappe CRM (Customized)</h1>
   <p><strong>A tailored sales, communication, and event management platform built on Vue 3 and Frappe.</strong></p>

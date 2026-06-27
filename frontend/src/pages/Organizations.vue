@@ -100,14 +100,14 @@ const rows = computed(() => {
 
       if (
         fieldType &&
-        ['Date', 'Datetime'].includes(fieldType) &&
+        ['Date', 'Datetime', 'Time'].includes(fieldType) &&
         !['modified', 'creation'].includes(row)
       ) {
         _rows[row] = formatDate(
           organization[row],
           '',
-          true,
-          fieldType == 'Datetime',
+          fieldType !== 'Time',
+          fieldType !== 'Date',
         )
       }
 

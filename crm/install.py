@@ -42,34 +42,29 @@ def add_default_lead_statuses():
 			"position": 1,
 		},
 		"Contacted": {
-			"color": "orange",
+			"color": "blue",
 			"type": "Ongoing",
 			"position": 2,
 		},
-		"Nurture": {
-			"color": "blue",
+		"No response": {
+			"color": "yellow",
 			"type": "Ongoing",
 			"position": 3,
 		},
-		"Qualified": {
-			"color": "green",
-			"type": "Won",
-			"position": 4,
-		},
-		"Converted": {
-			"color": "teal",
-			"type": "Won",
-			"position": 5,
-		},
-		"Unqualified": {
+		"Not interested": {
 			"color": "red",
 			"type": "Lost",
-			"position": 6,
+			"position": 4,
 		},
-		"Junk": {
-			"color": "purple",
-			"type": "Lost",
-			"position": 7,
+		"Interested to visit campus": {
+			"color": "green",
+			"type": "Ongoing",
+			"position": 5,
+		},
+		"Follow up": {
+			"color": "orange",
+			"type": "Ongoing",
+			"position": 6,
 		},
 	}
 
@@ -87,47 +82,35 @@ def add_default_lead_statuses():
 
 def add_default_deal_statuses():
 	statuses = {
-		"Qualification": {
+		"Counselling": {
 			"color": "gray",
 			"type": "Open",
-			"probability": 10,
+			"probability": 20,
 			"position": 1,
-		},
-		"Demo/Making": {
-			"color": "orange",
-			"type": "Ongoing",
-			"probability": 25,
-			"position": 2,
-		},
-		"Proposal/Quotation": {
-			"color": "blue",
-			"type": "Ongoing",
-			"probability": 50,
-			"position": 3,
 		},
 		"Negotiation": {
 			"color": "yellow",
 			"type": "Ongoing",
-			"probability": 70,
-			"position": 4,
+			"probability": 50,
+			"position": 2,
 		},
 		"Ready to Close": {
 			"color": "purple",
 			"type": "Ongoing",
 			"probability": 90,
-			"position": 5,
+			"position": 3,
 		},
 		"Won": {
 			"color": "green",
 			"type": "Won",
 			"probability": 100,
-			"position": 6,
+			"position": 4,
 		},
 		"Lost": {
 			"color": "red",
 			"type": "Lost",
 			"probability": 0,
-			"position": 7,
+			"position": 5,
 		},
 	}
 

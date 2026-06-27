@@ -313,7 +313,7 @@ async function fetchApps() {
       toast.error(__('No applications found in Vobiz account.'))
     }
   } catch (err) {
-    toast.error(err.message || __('Failed to fetch applications.'))
+    toast.error(err.messages?.[0] || err.message || __('Failed to fetch applications.'))
   }
 }
 
@@ -326,7 +326,7 @@ async function registerWebhook() {
       toast.success(__('Webhook registered successfully!'))
     }
   } catch (err) {
-    toast.error(err.message || __('Failed to register webhook.'))
+    toast.error(err.messages?.[0] || err.message || __('Failed to register webhook.'))
   }
 }
 
@@ -374,7 +374,7 @@ function update() {
       fetchWebhookUrl()
     },
     onError: (err) => {
-      toast.error(err.message || __('Failed to update settings'))
+      toast.error(err.messages?.[0] || err.message || __('Failed to update settings'))
     }
   })
 }

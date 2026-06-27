@@ -26,17 +26,17 @@ ln -sf /workspace /home/frappe/frappe-bench/apps/crm
 /home/frappe/frappe-bench/env/bin/pip install -e /workspace
 printf "\ncrm\n" >> /home/frappe/frappe-bench/sites/apps.txt
 
-bench new-site crm.localhost \
+bench new-site crm.aiprof.com \
     --force \
     --mariadb-root-password 123 \
     --admin-password admin \
     --no-mariadb-socket
 
-bench --site crm.localhost install-app crm
-bench --site crm.localhost set-config developer_mode 1
-bench --site crm.localhost set-config mute_emails 1
-bench --site crm.localhost set-config server_script_enabled 1
-bench --site crm.localhost clear-cache
-bench use crm.localhost
+bench --site crm.aiprof.com install-app crm
+bench --site crm.aiprof.com set-config developer_mode 1
+bench --site crm.aiprof.com set-config mute_emails 1
+bench --site crm.aiprof.com set-config server_script_enabled 1
+bench --site crm.aiprof.com clear-cache
+bench use crm.aiprof.com
 
 bench start

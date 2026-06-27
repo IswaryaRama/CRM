@@ -78,20 +78,44 @@ const { capture } = useTelemetry()
 
 const leadStatuses = computed(() => statusOptions('lead'))
 
+import { watch } from 'vue'
+watch(
+  () => [leadStatuses.value, tabs.data],
+  ([newStatuses, tabsData]) => {
+    if (tabsData && newStatuses && newStatuses.length) {
+      tabsData.forEach((tab) => {
+        tab.sections?.forEach((section) => {
+          section.columns?.forEach((column) => {
+            column.fields?.forEach((field) => {
+              if (field.fieldname == 'status') {
+                field.options = newStatuses
+                field.prefix = getLeadStatus(lead.doc.status)?.color
+              }
+            })
+          })
+        })
+      })
+      if (!lead.doc.status && newStatuses[0]?.value) {
+        lead.doc.status = newStatuses[0].value
+      }
+    }
+  },
+  { deep: true, immediate: true }
+)
 const tabs = createResource({
   url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
   cache: ['QuickEntry', 'CRM Lead'],
   params: { doctype: 'CRM Lead', type: 'Quick Entry' },
   auto: true,
   transform: (_tabs) => {
-    return _tabs.forEach((tab) => {
-      tab.sections.forEach((section) => {
-        section.columns.forEach((column) => {
-          column.fields.forEach((field) => {
+    _tabs?.forEach((tab) => {
+      tab.sections?.forEach((section) => {
+        section.columns?.forEach((column) => {
+          column.fields?.forEach((field) => {
             if (field.fieldname == 'status') {
               field.fieldtype = 'Select'
               field.options = leadStatuses.value
-              field.prefix = getLeadStatus(lead.doc.status).color
+              field.prefix = getLeadStatus(lead.doc.status)?.color
             }
 
             if (field.fieldtype === 'Table') {
@@ -101,6 +125,7 @@ const tabs = createResource({
         })
       })
     })
+    return _tabs
   },
 })
 

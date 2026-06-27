@@ -2,7 +2,7 @@
   <Dropdown :options="dropdownItems" v-bind="$attrs">
     <template #default="{ open }">
       <button
-        class="flex h-12 items-center rounded-md py-2 duration-300 ease-in-out"
+        class="flex flex-col h-auto items-start rounded-md pt-0.5 pb-1 duration-300 ease-in-out"
         :class="
           isCollapsed
             ? 'w-auto px-0'
@@ -11,37 +11,41 @@
               : 'w-full px-2 hover:bg-surface-gray-3'
         "
       >
-        <BrandLogo v-model="brand" class="h-8 max-w-16 flex-shrink-0" />
-        <div
-          class="flex flex-1 flex-col text-left duration-300 ease-in-out truncate"
-          :class="
-            isCollapsed
-              ? 'ml-0 w-0 overflow-hidden opacity-0'
-              : 'ml-2 w-auto opacity-100'
-          "
-        >
-          <div
-            class="text-base font-medium leading-none text-ink-gray-9 truncate"
-          >
-            {{ __(brand.name || 'CRM') }}
-          </div>
-          <div class="mt-1 text-sm leading-none text-ink-gray-7 truncate">
-            {{ user.full_name }}
-          </div>
+        <div class="h-8 w-full flex-shrink-0 mb-1 flex items-center justify-start">
+          <BrandLogo v-model="brand" :isCollapsed="isCollapsed" class="h-full w-auto max-w-full" />
         </div>
-        <div
-          class="duration-300 ease-in-out"
-          :class="
-            isCollapsed
-              ? 'ml-0 w-0 overflow-hidden opacity-0'
-              : 'ml-2 w-auto opacity-100'
-          "
-        >
-          <FeatherIcon
-            name="chevron-down"
-            class="size-4 text-ink-gray-5"
-            aria-hidden="true"
-          />
+        <div class="flex items-center w-full">
+          <div
+            class="flex flex-1 flex-col text-left duration-300 ease-in-out truncate"
+            :class="
+              isCollapsed
+                ? 'ml-0 w-0 overflow-hidden opacity-0'
+                : 'ml-0 w-auto opacity-100'
+            "
+          >
+            <div
+              class="text-base font-medium leading-none text-ink-gray-9 truncate"
+            >
+              {{ __(brand.name || 'CRM') }}
+            </div>
+            <div class="mt-1 text-sm leading-none text-ink-gray-7 truncate">
+              {{ user.full_name }}
+            </div>
+          </div>
+          <div
+            class="duration-300 ease-in-out"
+            :class="
+              isCollapsed
+                ? 'ml-0 w-0 overflow-hidden opacity-0'
+                : 'ml-2 w-auto opacity-100'
+            "
+          >
+            <FeatherIcon
+              name="chevron-down"
+              class="size-4 text-ink-gray-5"
+              aria-hidden="true"
+            />
+          </div>
         </div>
       </button>
     </template>

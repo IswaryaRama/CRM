@@ -314,8 +314,6 @@ const emit = defineEmits(['updateStep'])
 
 const { getUser, isManager } = usersStore()
 
-const isNewDoc = ref(false)
-
 const userName = computed(() => {
   const name = getUser().name
   return name === 'admin@example.com' ? 'Administrator' : name
@@ -350,6 +348,8 @@ const { document: telephonyAgent } = useDocument(
     },
   },
 )
+
+const isNewDoc = ref(telephonyAgent.doc ? !telephonyAgent.doc.user : false)
 
 const insertResource = createResource({
   url: 'frappe.client.insert',

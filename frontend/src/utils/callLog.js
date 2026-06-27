@@ -47,8 +47,8 @@ export function getCallLogDetail(row, log, columns = []) {
 
   let fieldType = columns?.find((col) => (col.key || col.value) == row)?.type
 
-  if (fieldType && ['Date', 'Datetime'].includes(fieldType)) {
-    return formatDate(log[row], '', true, fieldType == 'Datetime')
+  if (fieldType && ['Date', 'Datetime', 'Time'].includes(fieldType)) {
+    return formatDate(log[row], '', fieldType !== 'Time', fieldType !== 'Date')
   }
 
   if (fieldType && fieldType == 'Currency') {
