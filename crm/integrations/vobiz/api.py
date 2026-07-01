@@ -34,6 +34,7 @@ def get_vobiz_credentials():
 		"appId": vobiz_settings.app_id,
 		"appSecret": vobiz_settings.get_password("api_password") if vobiz_settings.api_password else "",
 		"websocketUrlOverride": vobiz_settings.websocket_url_override,
+		"record_calls": bool(vobiz_settings.record_calls),
 	}
 
 
@@ -47,9 +48,13 @@ def voice(**kwargs):
 		pass
 	frappe.log_error(title="Vobiz Voice Webhook", message=frappe.as_json(kwargs))
 	args = frappe._dict(kwargs)
-	enabled = frappe.db.get_single_value("CRM Vobiz Settings", "enabled")
+	vobiz_settings = frappe.get_single("CRM Vobiz Settings")
+	enabled = vobiz_settings.enabled
 	if not enabled:
 		return Response("<Response><Hangup/></Response>", mimetype="text/xml")
+	
+	record_calls = vobiz_settings.record_calls
+	record_attr = ' record="true"' if record_calls else ""
 
 	raw_from = args.get("From") or args.get("from") or ""
 	raw_to = args.get("To") or args.get("to") or ""
@@ -82,7 +87,7 @@ def voice(**kwargs):
 
 		xml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Dial callerId="{caller_id}">
+    <Dial callerId="{caller_id}"{record_attr}>
         <Number>{destination}</Number>
     </Dial>
 </Response>"""
@@ -131,7 +136,7 @@ def voice(**kwargs):
 		if agent.call_receiving_device == "Phone" and agent.mobile_no:
 			xml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Dial callerId="{destination_number}" timeout="30">
+    <Dial callerId="{destination_number}" timeout="30"{record_attr}>
         <Number>{agent.mobile_no}</Number>
     </Dial>
 </Response>"""
@@ -139,7 +144,7 @@ def voice(**kwargs):
 			# Ring browser client via WebRTC SIP endpoint
 			xml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Dial callerId="{caller_number}" timeout="30">
+    <Dial callerId="{caller_number}" timeout="30"{record_attr}>
         <User>sip:{agent.vobiz_username}@{sip_domain}</User>
     </Dial>
     <Speak>The user is currently on another call. Please try again later. Goodbye.</Speak>
@@ -311,6 +316,11 @@ def hangup(**kwargs):
 		except Exception:
 			pass
 
+	# Capture recording URL from Vobiz hangup payload (if present)
+	recording_url = args.get("RecordUrl") or args.get("RecordingUrl") or args.get("recordurl") or args.get("recording_url") or ""
+	if recording_url:
+		call_log.recording_url = recording_url
+
 	call_log.save(ignore_permissions=True)
 	frappe.db.commit()
 
@@ -318,10 +328,175 @@ def hangup(**kwargs):
 	frappe.publish_realtime("vobiz_call_update", {
 		"CallSid": call_log_name,
 		"Status": new_status,
-		"Duration": call_log.duration
+		"Duration": call_log.duration,
+		"RecordingUrl": recording_url or ""
 	})
 
 	# Enqueue telephony call log sync in the background
 	frappe.enqueue("crm.integrations.vobiz.sync.sync_telephony_call_logs", queue="short")
 
+	# If recording is enabled but not yet captured, fetch it from Vobiz API after a delay
+	if not recording_url and frappe.db.get_single_value("CRM Vobiz Settings", "record_calls"):
+		frappe.enqueue(
+			"crm.integrations.vobiz.api.fetch_vobiz_recording",
+			queue="short",
+			call_uuid=call_sid,
+			call_log_name=call_log_name,
+			at_front=False,
+			enqueue_after_commit=True,
+		)
+
 	return Response("OK", status=200)
+
+
+def fetch_vobiz_recording(call_uuid, call_log_name, retry_count=0):
+	"""Fetch recording URL from Vobiz REST API and update the CRM Call Log."""
+	import requests
+	import time
+
+	max_retries = 5
+	if retry_count >= max_retries:
+		frappe.log_error(
+			title="Vobiz Recording Fetch Failed",
+			message=f"Could not fetch recording for call {call_uuid} after {max_retries} retries"
+		)
+		return
+
+	vobiz_settings = frappe.get_single("CRM Vobiz Settings")
+	auth_id = vobiz_settings.auth_id
+	auth_token = vobiz_settings.get_password("api_password") if vobiz_settings.api_password else ""
+
+	if not auth_id or not auth_token:
+		return
+
+	# Wait a bit for Vobiz to process the recording (increases with each retry)
+	time.sleep(5 + (retry_count * 5))
+
+	try:
+		# Query Vobiz Recording API for this call
+		api_url = f"https://api.vobiz.ai/api/v1/Account/{auth_id}/Recording/"
+		response = requests.get(
+			api_url,
+			params={"call_uuid": call_uuid},
+			headers={
+				"X-Auth-ID": auth_id,
+				"X-Auth-Token": auth_token,
+			},
+			timeout=10,
+		)
+
+		if response.status_code == 200:
+			data = response.json()
+			recordings = data.get("objects") or data.get("recordings") or data.get("results") or []
+
+			# Also check if the response itself is a list
+			if isinstance(data, list):
+				recordings = data
+
+			recording_url = None
+			for rec in recordings:
+				url = rec.get("recording_url") or rec.get("RecordUrl") or rec.get("record_url") or rec.get("url") or ""
+				if url:
+					recording_url = url
+					break
+
+			if recording_url:
+				call_log = frappe.get_doc("CRM Call Log", call_log_name)
+				if not call_log.recording_url:
+					call_log.recording_url = recording_url
+					call_log.save(ignore_permissions=True)
+					frappe.db.commit()
+				return
+
+		# If no recording found yet, retry after a delay
+		frappe.enqueue(
+			"crm.integrations.vobiz.api.fetch_vobiz_recording",
+			queue="short",
+			call_uuid=call_uuid,
+			call_log_name=call_log_name,
+			retry_count=retry_count + 1,
+		)
+
+	except Exception as e:
+		frappe.log_error(
+			title="Vobiz Recording API Error",
+			message=f"Error fetching recording for {call_uuid}: {str(e)}"
+		)
+		# Retry on error
+		frappe.enqueue(
+			"crm.integrations.vobiz.api.fetch_vobiz_recording",
+			queue="short",
+			call_uuid=call_uuid,
+			call_log_name=call_log_name,
+			retry_count=retry_count + 1,
+		)
+
+
+@frappe.whitelist()
+def test_recording_api():
+	"""Temporary debug function to print Vobiz recordings."""
+	import requests
+	import json
+	vobiz_settings = frappe.get_single("CRM Vobiz Settings")
+	auth_id = vobiz_settings.auth_id
+	auth_token = vobiz_settings.get_password("api_password") if vobiz_settings.api_password else ""
+	api_url = f"https://api.vobiz.ai/api/v1/Account/{auth_id}/Recording/"
+	
+	print(f"Auth ID: {auth_id}")
+	try:
+		response = requests.get(
+			api_url,
+			headers={
+				"X-Auth-ID": auth_id,
+				"X-Auth-Token": auth_token,
+			},
+			timeout=10,
+		)
+		print(f"Status Code: {response.status_code}")
+		print(f"Response: {response.text}")
+	except Exception as e:
+		print(f"Error: {str(e)}")
+
+
+@frappe.whitelist(allow_guest=True)
+def upload_recording(call_sid):
+	"""Handles recording uploads from the browser WebRTC client."""
+	if not call_sid:
+		return {"ok": False, "error": "Missing Call SID"}
+
+	# Find the call log by name or id field
+	call_log_name = None
+	if frappe.db.exists("CRM Call Log", call_sid):
+		call_log_name = call_sid
+	else:
+		call_log_name = frappe.db.get_value("CRM Call Log", {"id": call_sid}, "name")
+
+	if not call_log_name:
+		return {"ok": False, "error": "Call log not found"}
+
+	# Get the file from request
+	file = frappe.request.files.get("file")
+	if not file:
+		return {"ok": False, "error": "No file uploaded"}
+
+	from frappe.utils.file_manager import save_file
+
+	# Save the file to Frappe's file system
+	saved_file = save_file(
+		fname=f"call_recording_{call_sid}.webm",
+		content=file.read(),
+		dt="CRM Call Log",
+		dn=call_log_name,
+		is_private=0
+	)
+
+	# Update CRM Call Log
+	call_log = frappe.get_doc("CRM Call Log", call_log_name)
+	call_log.recording_url = saved_file.file_url
+	call_log.save(ignore_permissions=True)
+	frappe.db.commit()
+
+	return {"ok": True, "recording_url": saved_file.file_url}
+
+
+

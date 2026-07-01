@@ -251,6 +251,10 @@ def sync_telephony_call_logs():
 					call_log.start_time = frappe.utils.to_datetime(start_time)
 				if end_time:
 					call_log.end_time = frappe.utils.to_datetime(end_time)
+					
+				recording_url = log.get("recording_url")
+				if recording_url:
+					call_log.recording_url = recording_url
 	
 				if target_doctype and target_docname:
 					call_log.link_with_reference_doc(target_doctype, target_docname)
@@ -262,6 +266,15 @@ def sync_telephony_call_logs():
 					
 				call_log.insert(ignore_permissions=True)
 				synced_count += 1
+			else:
+				# If call log exists, we still want to update recording_url if it's missing
+				recording_url = log.get("recording_url")
+				if recording_url:
+					existing_call_log = frappe.get_doc("CRM Call Log", call_id)
+					if not existing_call_log.recording_url:
+						existing_call_log.recording_url = recording_url
+						existing_call_log.save(ignore_permissions=True)
+						synced_count += 1
 		except Exception as e:
 			frappe.log_error(title="AIProf Telephony Sync Log Error", message=f"Error syncing call log: {str(e)}")
 		

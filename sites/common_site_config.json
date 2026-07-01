@@ -16,5 +16,6 @@
  "shallow_clone": true,
  "socketio_port": 9005,
  "use_redis_auth": false,
- "webserver_port": 8005
+ "webserver_port": 8005,
+ "allow_cors": "*"
 }

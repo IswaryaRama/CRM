@@ -7,33 +7,33 @@ def execute():
             "type": "Open",
             "position": 1,
         },
-        "Interested in webinar": {
+        "Interested in Webinar": {
             "color": "blue",
             "type": "Ongoing",
             "position": 2,
         },
-        "Not interested in webinar": {
+        "Not interested in Webinar": {
             "color": "red",
             "type": "Lost",
             "position": 3,
         },
-        "Webinar registered": {
+        "Webinar attended": {
             "color": "green",
             "type": "Ongoing",
             "position": 4,
         },
-        "Webinar not registered": {
-            "color": "orange",
+        "Webinar not attended": {
+            "color": "yellow",
             "type": "Ongoing",
             "position": 5,
         },
-        "Test registered": {
-            "color": "green",
+        "Test taken": {
+            "color": "blue",
             "type": "Ongoing",
             "position": 6,
         },
-        "Test not registered": {
-            "color": "red",
+        "Test not taken": {
+            "color": "yellow",
             "type": "Ongoing",
             "position": 7,
         },
@@ -43,29 +43,19 @@ def execute():
             "position": 8,
         },
         "Campus not visited": {
-            "color": "orange",
+            "color": "yellow",
             "type": "Ongoing",
             "position": 9,
         },
-        "Deal Declined": {
+        "Not paid": {
             "color": "red",
-            "type": "Ongoing",
+            "type": "Lost",
             "position": 10,
         },
     }
 
     # Delete old statuses that are not in the new list (optional, but requested to "update to")
     # For safety we just add the new ones, and update if they exist
-    # Delete old statuses that are not in the new list
-    existing_statuses = frappe.get_all("CRM Lead Status", pluck="name")
-    for old_status in existing_statuses:
-        if old_status not in statuses:
-            try:
-                frappe.delete_doc("CRM Lead Status", old_status, ignore_permissions=True, force=True)
-                print(f"Deleted {old_status}")
-            except Exception as e:
-                print(f"Could not delete {old_status}: {e}")
-
     for status, details in statuses.items():
         if not frappe.db.exists("CRM Lead Status", status):
             doc = frappe.new_doc("CRM Lead Status")
@@ -73,14 +63,14 @@ def execute():
             doc.color = details["color"]
             doc.type = details["type"]
             doc.position = details["position"]
-            doc.insert(ignore_permissions=True)
+            doc.insert()
             print(f"Added {status}")
         else:
             doc = frappe.get_doc("CRM Lead Status", status)
             doc.color = details["color"]
             doc.type = details["type"]
             doc.position = details["position"]
-            doc.save(ignore_permissions=True)
+            doc.save()
             print(f"Updated {status}")
 
     frappe.db.commit()

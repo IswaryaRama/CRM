@@ -2,35 +2,29 @@ import frappe
 
 def execute():
     statuses = {
-        "Counselling": {
-            "color": "gray",
-            "type": "Open",
-            "probability": 20,
-            "position": 1,
-        },
         "Negotiation": {
             "color": "yellow",
-            "type": "Ongoing",
-            "probability": 50,
-            "position": 2,
+            "type": "Open",
+            "probability": 30,
+            "position": 1,
         },
         "Ready to Close": {
             "color": "purple",
             "type": "Ongoing",
-            "probability": 90,
-            "position": 3,
+            "probability": 70,
+            "position": 2,
         },
-        "Won": {
+        "Seat Reserved": {
             "color": "green",
             "type": "Won",
             "probability": 100,
-            "position": 4,
+            "position": 3,
         },
-        "Lost": {
+        "Seat Not Reserved": {
             "color": "red",
             "type": "Lost",
             "probability": 0,
-            "position": 5,
+            "position": 4,
         },
     }
 

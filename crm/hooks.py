@@ -5,6 +5,7 @@ app_description = "Kick-ass Open Source CRM"
 app_email = "shariq@frappe.io"
 app_license = "AGPLv3"
 app_icon_url = "/assets/crm/images/logo.png"
+app_logo_url = "/assets/crm/images/logo.png"
 app_icon_title = "CRM"
 app_icon_route = "/crm"
 
@@ -61,9 +62,9 @@ require_type_annotated_api_methods = True
 # home_page = "login"
 
 # website user home page (by Role)
-# role_home_page = {
-# "Role": "home_page"
-# }
+role_home_page = {
+	"All": "me"
+}
 
 website_route_rules = [
 	{"from_route": "/crm/<path:app_path>", "to_route": "crm"},

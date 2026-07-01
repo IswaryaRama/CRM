@@ -160,6 +160,24 @@ def get_recording_url(call_log_name: str):
 	if not log.recording_url:
 		frappe.throw(_("Recording URL not found"), frappe.DoesNotExistError)
 
+	# If it's a local/relative file path
+	if "://" not in log.recording_url:
+		import os
+		rel_path = log.recording_url.lstrip("/")
+		if rel_path.startswith("private/"):
+			file_path = frappe.get_site_path(rel_path)
+		else:
+			# Public file path
+			file_path = frappe.get_site_path("public", rel_path)
+
+		if os.path.exists(file_path):
+			mimetype = "audio/webm" if file_path.endswith(".webm") else "audio/mpeg"
+			with open(file_path, "rb") as f:
+				response = Response(f.read(), mimetype=mimetype)
+				return response
+		else:
+			frappe.throw(_("Recording file not found on disk"), frappe.DoesNotExistError)
+
 	auth = _get_recording_credentials(log.telephony_medium)
 	with requests.get(log.recording_url, auth=auth, stream=True, timeout=10) as r:
 		r.raise_for_status()

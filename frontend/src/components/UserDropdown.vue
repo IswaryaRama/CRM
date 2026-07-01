@@ -1,59 +1,61 @@
 <template>
-  <Dropdown :options="dropdownItems" v-bind="$attrs">
-    <template #default="{ open }">
-      <button
-        class="flex flex-col h-auto items-start rounded-md pt-0.5 pb-1 duration-300 ease-in-out"
-        :class="
-          isCollapsed
-            ? 'w-auto px-0'
-            : open
-              ? 'w-full px-2 bg-surface-white shadow-sm'
-              : 'w-full px-2 hover:bg-surface-gray-3'
-        "
-      >
-        <div class="h-8 w-full flex-shrink-0 mb-1 flex items-center justify-start">
-          <BrandLogo v-model="brand" :isCollapsed="isCollapsed" class="h-full w-auto max-w-full" />
-        </div>
-        <div class="flex items-center w-full">
-          <div
-            class="flex flex-1 flex-col text-left duration-300 ease-in-out truncate"
-            :class="
-              isCollapsed
-                ? 'ml-0 w-0 overflow-hidden opacity-0'
-                : 'ml-0 w-auto opacity-100'
-            "
-          >
-            <div
-              class="text-base font-medium leading-none text-ink-gray-9 truncate"
-            >
-              {{ __(brand.name || 'CRM') }}
+  <div class="flex flex-col w-full">
+    <div
+      class="flex items-center justify-center duration-300 ease-in-out select-none"
+      :class="
+        isCollapsed
+          ? 'h-10 px-0 mb-2'
+          : 'h-10 px-2 mb-3 mt-1'
+      "
+    >
+      <BrandLogo v-model="brand" :isCollapsed="isCollapsed" class="h-8 w-auto max-w-full" />
+    </div>
+
+    <!-- Clickable Dropdown Trigger -->
+    <Dropdown :options="dropdownItems" class="w-full" v-bind="$attrs">
+      <template #default="{ open }">
+        <button
+          class="flex flex-col h-auto items-start rounded-lg transition-all duration-200 ease-in-out border border-gray-100/80 bg-white"
+          :class="
+            isCollapsed
+              ? 'w-10 h-10 p-0 justify-center items-center hover:bg-gray-50 hover:border-gray-200'
+              : open
+                ? 'w-full px-3 py-2 bg-gray-50/60 border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)]'
+                : 'w-full px-3 py-2 hover:bg-gray-50/50 hover:border-gray-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]'
+          "
+        >
+          <!-- Expanded State -->
+          <div v-if="!isCollapsed" class="flex items-center w-full">
+            <div class="flex flex-1 flex-col text-left truncate">
+              <div class="text-sm font-semibold leading-none text-gray-900 truncate">
+                {{ __(brand.name || 'CRM') }}
+              </div>
+              <div class="mt-1.5 text-xs font-normal leading-none text-gray-500 truncate">
+                {{ user.full_name }}
+              </div>
             </div>
-            <div class="mt-1 text-sm leading-none text-ink-gray-7 truncate">
-              {{ user.full_name }}
+            <div class="ml-2 transition-transform duration-200" :class="{ 'rotate-180': open }">
+              <FeatherIcon
+                name="chevron-down"
+                class="size-3.5 text-gray-400"
+                aria-hidden="true"
+              />
             </div>
           </div>
-          <div
-            class="duration-300 ease-in-out"
-            :class="
-              isCollapsed
-                ? 'ml-0 w-0 overflow-hidden opacity-0'
-                : 'ml-2 w-auto opacity-100'
-            "
-          >
-            <FeatherIcon
-              name="chevron-down"
-              class="size-4 text-ink-gray-5"
-              aria-hidden="true"
-            />
+
+          <!-- Collapsed State: Show User Avatar -->
+          <div v-else class="flex items-center justify-center w-full h-full">
+            <UserAvatar v-if="user && user.name" :user="user.name" class="size-7 rounded-md shadow-sm" />
           </div>
-        </div>
-      </button>
-    </template>
-  </Dropdown>
+        </button>
+      </template>
+    </Dropdown>
+  </div>
 </template>
 
 <script setup>
 import BrandLogo from '@/components/BrandLogo.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import FrappeCloudIcon from '@/components/Icons/FrappeCloudIcon.vue'
 import Apps from '@/components/Apps.vue'
 import { sessionStore } from '@/stores/session'

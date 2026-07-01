@@ -75,10 +75,7 @@
             <PlayIcon class="size-3" />
           </template>
         </Badge>
-        <Badge
-          :label="statusLabelMap[call.status]"
-          :theme="statusColorMap[call.status]"
-        />
+
       </div>
       <div
         v-if="

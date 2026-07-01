@@ -303,12 +303,7 @@ const detailFields = computed(() => {
       name: 'duration',
       value: data.duration.label,
     },
-    {
-      icon: CheckCircleIcon,
-      name: 'status',
-      value: data.status.label,
-      color: data.status.color,
-    },
+
     {
       icon: h(FeatherIcon, {
         name: 'play-circle',

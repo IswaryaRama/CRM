@@ -1,5 +1,5 @@
 <template>
-  <div v-if="brand?.logo" class="h-full w-full flex items-center" :class="isCollapsed ? 'justify-center' : 'justify-start'">
+  <div v-if="brand?.logo" class="h-full w-full flex items-center justify-center">
     <img
       v-if="isCollapsed && brand.favicon"
       :src="brand.favicon"
@@ -8,11 +8,11 @@
     <img
       v-else
       :src="brand.logo"
-      class="h-full w-full object-contain"
-      :class="isCollapsed ? 'object-center max-h-8 max-w-8' : 'object-left'"
+      class="h-full w-full object-contain object-center"
+      :class="isCollapsed ? 'max-h-8 max-w-8' : ''"
     />
   </div>
-  <CRMLogo v-else :isCollapsed="isCollapsed" class="h-full w-auto object-contain shrink-0" :class="isCollapsed ? 'object-center' : 'object-left'" />
+  <CRMLogo v-else :isCollapsed="isCollapsed" class="h-full w-auto object-contain object-center shrink-0" />
 </template>
 
 <script setup>

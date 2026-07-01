@@ -380,15 +380,25 @@ function addVobizListeners() {
   })
 
   vobiz.client.on('onCallAnswered', (callInfo) => {
-    onCall.value = true
-    calling.value = false
-    callStatus.value = 'in-progress'
-    if (callInfo?.callUUID) {
-      currentCallSid = callInfo.callUUID
+    console.warn('🟢 [Vobiz] onCallAnswered fired!', callInfo)
+    try {
+      onCall.value = true
+      calling.value = false
+      callStatus.value = 'in-progress'
+      if (callInfo?.callUUID) {
+        currentCallSid = callInfo.callUUID
+      }
+      counterUp.value.start()
+      attachAudioStream()
+      updateBackendStatus('In Progress')
+    } catch (err) {
+      console.error('🔴 [Vobiz] Error in onCallAnswered BEFORE recording:', err)
     }
-    counterUp.value.start()
-    attachAudioStream()
-    updateBackendStatus('In Progress')
+    // Start local recording via Media API
+    console.warn('🎙️ [Vobiz] About to call startBrowserRecording()...')
+    startBrowserRecording().catch((err) => {
+      console.error('🔴 [Vobiz] startBrowserRecording() FAILED:', err)
+    })
   })
 
   vobiz.client.on('onCallTerminated', (event, callInfo) => {
@@ -399,6 +409,10 @@ function addVobizListeners() {
     const callSidForUpdate = currentCallSid
     // Capture duration BEFORE endCallUI resets the timer
     const durationSec = counterUp.value ? counterUp.value.totalSeconds || 0 : 0
+    
+    // Stop local recording
+    stopBrowserRecording()
+
     endCallUI()
     if (callSidForUpdate) {
       call('crm.integrations.vobiz.api.update_vobiz_call_status', {
@@ -414,6 +428,10 @@ function addVobizListeners() {
       currentCallSid = callInfo.callUUID
     }
     const callSidForUpdate = currentCallSid
+    
+    // Stop local recording
+    stopBrowserRecording()
+
     endCallUI()
     if (callSidForUpdate) {
       let backendStatus = 'Failed'
@@ -567,10 +585,24 @@ function rejectIncomingCall() {
 }
 
 function hangUpCall() {
+  // Capture call SID and duration BEFORE endCallUI clears them
+  const callSidForUpdate = currentCallSid
+  const durationSec = counterUp.value ? counterUp.value.totalSeconds || 0 : 0
+
+  stopBrowserRecording()
   if (vobiz) {
     vobiz.client.hangup()
   }
   endCallUI()
+
+  // Update backend status to Completed after UI cleanup
+  if (callSidForUpdate) {
+    call('crm.integrations.vobiz.api.update_vobiz_call_status', {
+      call_sid: callSidForUpdate,
+      status: 'Completed',
+      duration: durationSec,
+    }).catch((err) => console.warn('Could not update call status on hangup:', err))
+  }
 }
 
 function cancelCall() {
@@ -633,6 +665,145 @@ function toggleCallWindow() {
 function handleUnload() {
   if (vobiz) {
     vobiz.client.logout()
+  }
+}
+
+// Browser recording helper variables
+let audioContext = null
+let mediaRecorder = null
+let localAudioStream = null
+let recordingChunks = []
+
+async function startBrowserRecording() {
+  console.warn('⚠️ [Vobiz Record] startBrowserRecording() CALLED — attempting to start recording...')
+  try {
+    recordingChunks = []
+    
+    // 1. Get agent microphone stream (local)
+    console.log('[Vobiz Record] Requesting microphone access via getUserMedia...')
+    localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    console.log('[Vobiz Record] Microphone access granted!')
+    
+    // 2. Wait a moment to ensure WebRTC remote stream is attached
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    
+    let remoteStream = null
+    if (vobiz && vobiz.client && vobiz.client.remoteView) {
+      remoteStream = vobiz.client.remoteView.srcObject
+    }
+    
+    if (!remoteStream && vobiz && vobiz.client) {
+      try {
+        const pc = vobiz.client.getPeerConnection()?.pc
+        if (pc) {
+          const receivers = pc.getReceivers()
+          const audioReceiver = receivers.find((r) => r.track && r.track.kind === 'audio')
+          if (audioReceiver && audioReceiver.track) {
+            remoteStream = new MediaStream([audioReceiver.track])
+          }
+        }
+      } catch (e) {
+        console.warn('[Vobiz Record] Error reading PeerConnection track:', e)
+      }
+    }
+    
+    if (!remoteStream) {
+      console.warn('[Vobiz Record] Remote stream not found. Recording only local microphone.')
+    }
+    
+    // 3. Set up Audio Context and mix streams
+    audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const dest = audioContext.createMediaStreamDestination()
+    
+    // Connect local microphone
+    const localSource = audioContext.createMediaStreamSource(localAudioStream)
+    localSource.connect(dest)
+    
+    // Connect remote speaker audio (if available)
+    if (remoteStream) {
+      const remoteSource = audioContext.createMediaStreamSource(remoteStream)
+      remoteSource.connect(dest)
+    }
+    
+    // 4. Start MediaRecorder on the mixed stream
+    mediaRecorder = new MediaRecorder(dest.stream, { mimeType: 'audio/webm' })
+    
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        recordingChunks.push(event.data)
+      }
+    }
+    
+    mediaRecorder.onstop = async () => {
+      if (recordingChunks.length === 0) return
+      
+      const audioBlob = new Blob(recordingChunks, { type: 'audio/webm' })
+      // Use the captured call SID from stopBrowserRecording, not currentCallSid (which may be null by now)
+      const sidForUpload = mediaRecorder._capturedCallSid || currentCallSid
+      const audioFile = new File([audioBlob], `recording_${sidForUpload || 'temp'}.webm`, { type: 'audio/webm' })
+      
+      // Upload recording
+      if (sidForUpload) {
+        await uploadRecordingFile(sidForUpload, audioFile)
+      } else {
+        console.warn('[Vobiz Record] No call SID available for upload, skipping.')
+      }
+      
+      // Clean up microphone stream
+      if (localAudioStream) {
+        localAudioStream.getTracks().forEach((track) => track.stop())
+      }
+    }
+    
+    mediaRecorder.start()
+    console.log('[Vobiz Record] Browser call recording started!')
+  } catch (err) {
+    console.error('[Vobiz Record] Failed to start browser recording:', err)
+  }
+}
+
+function stopBrowserRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    // Capture the call SID NOW before endCallUI() nullifies it
+    mediaRecorder._capturedCallSid = currentCallSid
+    mediaRecorder.stop()
+    console.log('[Vobiz Record] Browser call recording stopped! Captured SID:', currentCallSid)
+  }
+}
+
+async function uploadRecordingFile(callSid, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('call_sid', callSid)
+  
+  // Get CSRF token - try multiple sources
+  const csrfToken = window.csrf_token || window.frappe?.csrf_token || document.cookie.match(/csrf_token=([^;]+)/)?.[1] || ''
+  
+  try {
+    console.log('[Vobiz Record] Uploading call recording file for Call SID:', callSid, 'CSRF token present:', !!csrfToken)
+    const response = await fetch('/api/method/crm.integrations.vobiz.api.upload_recording', {
+      method: 'POST',
+      headers: {
+        'X-Frappe-CSRF-Token': csrfToken,
+      },
+      body: formData,
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[Vobiz Record] Upload HTTP error:', response.status, errorText)
+      return
+    }
+    
+    const result = await response.json()
+    if (result.message && result.message.ok) {
+      console.log('[Vobiz Record] Recording uploaded successfully:', result.message.recording_url)
+      toast.success(__('Call recording saved.'))
+    } else {
+      console.error('[Vobiz Record] Recording upload failed:', result.message?.error || result)
+    }
+  } catch (err) {
+    console.error('[Vobiz Record] Error uploading recording file:', err)
   }
 }
 

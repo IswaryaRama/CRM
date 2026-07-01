@@ -6,6 +6,7 @@ import { viewsStore } from '@/stores/views'
 const routes = [
   {
     path: '/',
+    alias: '/index',
     name: 'Home',
   },
   {
@@ -166,12 +167,12 @@ router.beforeEach(async (to, from, next) => {
 
     let defaultView = getDefaultView()
     if (!defaultView) {
-      next({ name: 'Leads' })
+      next({ name: 'Dashboard' })
       return
     }
 
     let { route_name, type, name, is_standard } = defaultView
-    route_name = route_name || 'Leads'
+    route_name = route_name || 'Dashboard'
 
     if (name && !is_standard) {
       next({
@@ -183,7 +184,7 @@ router.beforeEach(async (to, from, next) => {
       next({ name: route_name, params: { viewType: type } })
     }
   } else if (!isLoggedIn) {
-    window.location.href = '/login?redirect-to=/crm'
+    window.location.href = '/login?redirect-to=/index'
   } else if (to.matched.length === 0) {
     next({ name: 'Invalid Page' })
   } else if (['Deal', 'Lead'].includes(to.name) && !to.hash) {

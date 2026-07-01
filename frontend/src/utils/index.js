@@ -44,6 +44,8 @@ export function formatDate(date, format, onlyDate = false, onlyTime = false) {
       date = `2000-01-01 ${h}:${m}:${s}`
     } else if (/^\d{2}:\d{2}:\d{2}/.test(date)) {
       date = `2000-01-01 ${date}`
+    } else if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(date) && !date.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(date)) {
+      date = date.replace(' ', 'T') + 'Z'
     }
   }
   format = getFormat(date, format, onlyDate, onlyTime, false)
@@ -122,6 +124,9 @@ export function prettyDate(date, mini = false) {
   let localTimezone = getConfig('localTimezone') || getBrowserTimezone()
 
   if (typeof date == 'string') {
+    if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(date) && !date.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(date)) {
+      date = date.replace(' ', 'T') + 'Z'
+    }
     date = dayjsLocal(date)
   }
 

@@ -250,7 +250,7 @@ class CRMCallLog(Document):
 				
 			if direction_changed or not more_recent_exists:
 				# Save Lead
-				lead.save(ignore_permissions=True)
+				lead.save(ignore_permissions=True, ignore_version=True)
 
 	def get_linked_lead_name(self):
 		if self.reference_doctype == "CRM Lead" and self.reference_docname:
