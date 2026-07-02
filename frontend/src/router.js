@@ -120,6 +120,11 @@ const routes = [
     props: true,
   },
   {
+    path: '/user-activity',
+    name: 'User Activity',
+    component: () => import('@/pages/UserActivity.vue'),
+  },
+  {
     path: '/welcome',
     name: 'Welcome',
     component: () => import('@/pages/Welcome.vue'),

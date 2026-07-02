@@ -32,7 +32,7 @@ export const usersStore = defineStore('crm-users', () => {
   })
 
   function getUser(email) {
-    if (!email || email === 'sessionUser') {
+    if (!email || email === 'sessionUser' || email === '@me') {
       email = session.user
     }
     if (!usersByName[email]) {

@@ -17,7 +17,7 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
   const views = createResource({
     url: 'crm.api.views.get_views',
     params: { doctype: doctype || '' },
-    cache: 'crm-views',
+    cache: 'crm-views-v2',
     initialData: [],
     auto: true,
     transform(views) {

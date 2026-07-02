@@ -1,18 +1,31 @@
 import frappe
 
 def execute():
+    # Rename old status if they exist
+    for old_name, new_name in [
+        ("Interested in Webinar", "Registered for webinar"),
+        ("Interested in webinar", "Registered for webinar"),
+        ("Not interested in Webinar", "Not registered in webinar"),
+        ("Not interested in webinar", "Not registered in webinar"),
+        ("Not paid", "Deal lost"),
+        ("Not Paid", "Deal lost")
+    ]:
+        if frappe.db.exists("CRM Lead Status", old_name) and not frappe.db.exists("CRM Lead Status", new_name):
+            frappe.rename_doc("CRM Lead Status", old_name, new_name, force=True)
+            print(f"Renamed status {old_name} to {new_name}")
+
     statuses = {
         "New": {
             "color": "gray",
             "type": "Open",
             "position": 1,
         },
-        "Interested in Webinar": {
+        "Registered for webinar": {
             "color": "blue",
             "type": "Ongoing",
             "position": 2,
         },
-        "Not interested in Webinar": {
+        "Not registered in webinar": {
             "color": "red",
             "type": "Lost",
             "position": 3,
@@ -47,7 +60,7 @@ def execute():
             "type": "Ongoing",
             "position": 9,
         },
-        "Not paid": {
+        "Deal lost": {
             "color": "red",
             "type": "Lost",
             "position": 10,

@@ -401,7 +401,7 @@ function addVobizListeners() {
     })
   })
 
-  vobiz.client.on('onCallTerminated', (event, callInfo) => {
+  vobiz.client.on('onCallTerminated', async (event, callInfo) => {
     // Extract callUUID before ending UI in case it was updated
     if (callInfo?.callUUID && !currentCallSid) {
       currentCallSid = callInfo.callUUID
@@ -413,14 +413,20 @@ function addVobizListeners() {
     // Stop local recording
     stopBrowserRecording()
 
-    endCallUI()
+    // Update call status BEFORE clearing the UI to ensure the API call fires reliably
     if (callSidForUpdate) {
-      call('crm.integrations.vobiz.api.update_vobiz_call_status', {
-        call_sid: callSidForUpdate,
-        status: 'Completed',
-        duration: durationSec,
-      }).catch((err) => console.warn('Could not update call status on termination:', err))
+      try {
+        await call('crm.integrations.vobiz.api.update_vobiz_call_status', {
+          call_sid: callSidForUpdate,
+          status: 'Completed',
+          duration: durationSec,
+        })
+      } catch (err) {
+        console.warn('Could not update call status on termination:', err)
+      }
     }
+
+    endCallUI()
   })
 
   vobiz.client.on('onCallFailed', (cause, callInfo) => {
@@ -687,6 +693,15 @@ async function startBrowserRecording() {
     // 2. Wait a moment to ensure WebRTC remote stream is attached
     await new Promise((resolve) => setTimeout(resolve, 1500))
     
+    // Check if call was terminated while waiting
+    if (!onCall.value) {
+      console.warn('[Vobiz Record] Call already terminated before recording setup completed. Aborting.')
+      if (localAudioStream) {
+        localAudioStream.getTracks().forEach((track) => track.stop())
+      }
+      return
+    }
+    
     let remoteStream = null
     if (vobiz && vobiz.client && vobiz.client.remoteView) {
       remoteStream = vobiz.client.remoteView.srcObject
@@ -713,6 +728,7 @@ async function startBrowserRecording() {
     
     // 3. Set up Audio Context and mix streams
     audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    await audioContext.resume()
     const dest = audioContext.createMediaStreamDestination()
     
     // Connect local microphone
@@ -755,7 +771,7 @@ async function startBrowserRecording() {
       }
     }
     
-    mediaRecorder.start()
+    mediaRecorder.start(1000)
     console.log('[Vobiz Record] Browser call recording started!')
   } catch (err) {
     console.error('[Vobiz Record] Failed to start browser recording:', err)
@@ -766,8 +782,10 @@ function stopBrowserRecording() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     // Capture the call SID NOW before endCallUI() nullifies it
     mediaRecorder._capturedCallSid = currentCallSid
+    // Request a final data chunk before stopping
+    try { mediaRecorder.requestData() } catch (e) { /* ignore if not supported */ }
     mediaRecorder.stop()
-    console.log('[Vobiz Record] Browser call recording stopped! Captured SID:', currentCallSid)
+    console.log('[Vobiz Record] Browser call recording stopped! Captured SID:', currentCallSid, 'Chunks:', recordingChunks.length)
   }
 }
 

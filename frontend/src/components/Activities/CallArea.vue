@@ -67,9 +67,9 @@
         </Badge>
         <Badge
           v-if="call.recording_url"
-          :label="call.show_recording ? __('Hide Recording') : __('Listen')"
+          :label="showRecording ? __('Hide Recording') : __('Listen')"
           class="cursor-pointer"
-          @click.stop="call.show_recording = !call.show_recording"
+          @click.stop="showRecording = !showRecording"
         >
           <template #prefix>
             <PlayIcon class="size-3" />
@@ -79,7 +79,7 @@
       </div>
       <div
         v-if="
-          call.show_recording &&
+          showRecording &&
           call.recording_url &&
           callLog?.data?.recording_url_path
         "
@@ -105,19 +105,40 @@ import CallLogDetailModal from '@/components/Modals/CallLogDetailModal.vue'
 import { statusLabelMap, statusColorMap } from '@/utils/callLog.js'
 import { formatDate, timeAgo } from '@/utils'
 import { Avatar, Badge, Tooltip, createResource } from 'frappe-ui'
-import { reactive, ref } from 'vue'
+import { reactive, watch, ref } from 'vue'
 
 const props = defineProps({
   activity: { type: Object, default: () => ({}) },
 })
 
-const call = reactive(props.activity)
+const call = reactive({ ...props.activity })
+const showRecording = ref(false)
 
 const callLog = createResource({
   url: 'crm.fcrm.doctype.crm_call_log.crm_call_log.get_call_log',
-  params: { name: call.name },
-  cache: ['call_log', call.name],
+  params: () => ({ name: call.name }),
   auto: true,
 })
+
+watch(
+  () => props.activity,
+  (newActivity, oldActivity) => {
+    if (newActivity) {
+      Object.assign(call, newActivity)
+      if (callLog) {
+        if (
+          !oldActivity ||
+          newActivity.status !== oldActivity.status ||
+          newActivity.recording_url !== oldActivity.recording_url ||
+          newActivity.duration !== oldActivity.duration
+        ) {
+          callLog.reload()
+        }
+      }
+    }
+  },
+  { deep: true, immediate: true }
+)
+
 const showCallLogDetailModal = ref(false)
 </script>

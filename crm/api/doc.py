@@ -283,6 +283,9 @@ def get_data(
 ):
 	custom_view = False
 	filters = frappe._dict(filters)
+	if doctype == "CRM Call Log":
+		allowed_keys = ["telephony_medium", "type", "status", "from", "to", "call_date", "call_time"]
+		filters = frappe._dict({k: v for k, v in filters.items() if k in allowed_keys})
 	rows = frappe.parse_json(rows or "[]")
 	columns = frappe.parse_json(columns or "[]")
 	kanban_fields = frappe.parse_json(kanban_fields or "[]")

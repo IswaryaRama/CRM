@@ -544,7 +544,6 @@ const changeTabTo = (tabName) => {
 const all_activities = createResource({
   url: 'crm.api.activities.get_activities',
   params: { name: props.docname },
-  cache: ['activity', props.docname],
   auto: true,
   transform: ([versions, calls, notes, tasks, attachments]) => {
     return { versions, calls, notes, tasks, attachments }
@@ -576,6 +575,11 @@ watch(
 
 onBeforeUnmount(() => {
   $socket.off('whatsapp_message')
+  $socket.off('crm_lead_update')
+  $socket.off('crm_deal_update')
+  $socket.off('vobiz_call_update')
+  $socket.off('vobiz_call')
+  $socket.off('exotel_call')
 })
 
 onMounted(() => {
@@ -586,6 +590,30 @@ onMounted(() => {
     ) {
       whatsappMessages.reload()
     }
+  })
+
+  $socket.on('crm_lead_update', (data) => {
+    if (props.doctype === 'CRM Lead' && data?.lead === props.docname) {
+      all_activities.reload()
+    }
+  })
+
+  $socket.on('crm_deal_update', (data) => {
+    if (props.doctype === 'CRM Deal' && data?.deal === props.docname) {
+      all_activities.reload()
+    }
+  })
+
+  $socket.on('vobiz_call_update', () => {
+    all_activities.reload()
+  })
+
+  $socket.on('vobiz_call', () => {
+    all_activities.reload()
+  })
+
+  $socket.on('exotel_call', () => {
+    all_activities.reload()
   })
 
   nextTick(() => {

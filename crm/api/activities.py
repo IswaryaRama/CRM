@@ -163,10 +163,29 @@ def get_deal_activities(name: str):
 		}
 		activities.append(activity)
 
-	calls = calls + get_linked_calls(name).get("calls", [])
+	deal_calls = get_linked_calls(name).get("calls", [])
+	calls = calls + deal_calls
 	notes = notes + get_linked_notes(name) + get_linked_calls(name).get("notes", [])
 	tasks = tasks + get_linked_tasks(name) + get_linked_calls(name).get("tasks", [])
 	attachments = attachments + get_attachments("CRM Deal", name)
+
+	call_names = [call.name for call in deal_calls] if deal_calls else []
+	if call_names:
+		attachments = attachments + (frappe.db.get_all(
+			"File",
+			filters={"attached_to_doctype": "CRM Call Log", "attached_to_name": ["in", call_names]},
+			fields=[
+				"name",
+				"file_name",
+				"file_type",
+				"file_url",
+				"file_size",
+				"is_private",
+				"modified",
+				"creation",
+				"owner",
+			],
+		) or [])
 
 	activities.sort(key=lambda x: x["creation"], reverse=True)
 	activities = handle_multiple_versions(activities)
@@ -308,6 +327,24 @@ def get_lead_activities(name: str):
 	notes = get_linked_notes(name) + get_linked_calls(name).get("notes", [])
 	tasks = get_linked_tasks(name) + get_linked_calls(name).get("tasks", [])
 	attachments = get_attachments("CRM Lead", name)
+
+	call_names = [call.name for call in calls] if calls else []
+	if call_names:
+		attachments = attachments + (frappe.db.get_all(
+			"File",
+			filters={"attached_to_doctype": "CRM Call Log", "attached_to_name": ["in", call_names]},
+			fields=[
+				"name",
+				"file_name",
+				"file_type",
+				"file_url",
+				"file_size",
+				"is_private",
+				"modified",
+				"creation",
+				"owner",
+			],
+		) or [])
 
 	activities.sort(key=lambda x: x["creation"], reverse=True)
 	activities = handle_multiple_versions(activities)
@@ -521,3 +558,338 @@ def parse_attachment_log(html: str, type: str):
 
 def is_translatable(doctype: str) -> bool:
 	return doctype in get_translated_doctypes()
+
+
+@frappe.whitelist()
+def get_user_activities(user: str, limit: int = 100):
+	# Ensure admin/manager permissions
+	roles = frappe.get_roles()
+	if "System Manager" not in roles and "Sales Manager" not in roles:
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+	activities = []
+
+	# 1. Fetch versions (edits/creations)
+	versions = frappe.db.get_all(
+		"Version",
+		filters={"owner": user, "ref_doctype": ["in", ["CRM Lead", "CRM Deal", "Contact", "CRM Organization"]]},
+		fields=["name", "ref_doctype", "docname", "data", "creation", "owner"],
+		limit=limit,
+		order_by="creation desc"
+	)
+	
+	# Resolve doctypes and labels
+	lead_meta = frappe.get_meta("CRM Lead")
+	lead_fields = {field.fieldname: {"label": field.label, "options": field.options} for field in lead_meta.fields}
+	deal_meta = frappe.get_meta("CRM Deal")
+	deal_fields = {field.fieldname: {"label": field.label, "options": field.options} for field in deal_meta.fields}
+	
+	avoid_fields = [
+		"converted", "response_by", "sla_creation", "sla", "first_response_time", "first_responded_on",
+		"lead", "first_responded_on"
+	]
+
+	for v in versions:
+		try:
+			data = json.loads(v.data)
+		except Exception:
+			continue
+			
+		if not data.get("changed"):
+			activities.append({
+				"activity_type": "creation",
+				"creation": v.creation,
+				"owner": v.owner,
+				"data": _("created this {0}").format(v.ref_doctype),
+				"reference_doctype": v.ref_doctype,
+				"reference_docname": v.docname
+			})
+			continue
+
+		if change := data.get("changed")[0]:
+			fields_meta = lead_fields if v.ref_doctype == "CRM Lead" else deal_fields
+			field = fields_meta.get(change[0], None)
+			if not field or change[0] in avoid_fields or (not change[1] and not change[2]):
+				continue
+				
+			field_label = field.get("label") or change[0]
+			field_option = field.get("options") or None
+			
+			activity_type = "changed"
+			act_data = {
+				"field": change[0],
+				"field_label": field_label,
+				"old_value": change[1],
+				"value": change[2],
+			}
+			if not change[1] and change[2]:
+				activity_type = "added"
+				act_data = {
+					"field": change[0],
+					"field_label": field_label,
+					"value": change[2],
+				}
+			elif change[1] and not change[2]:
+				activity_type = "removed"
+				act_data = {
+					"field": change[0],
+					"field_label": field_label,
+					"value": change[1],
+				}
+				
+			activities.append({
+				"activity_type": activity_type,
+				"creation": v.creation,
+				"owner": v.owner,
+				"data": act_data,
+				"reference_doctype": v.ref_doctype,
+				"reference_docname": v.docname,
+				"options": field_option
+			})
+
+	# 2. Fetch comments
+	comments = frappe.db.get_all(
+		"Comment",
+		filters={
+			"owner": user,
+			"comment_type": "Comment",
+			"reference_doctype": ["in", ["CRM Lead", "CRM Deal", "Contact", "CRM Organization", "CRM Call Log"]]
+		},
+		fields=["name", "reference_doctype", "reference_name", "content", "creation", "owner"],
+		limit=limit,
+		order_by="creation desc"
+	)
+	for c in comments:
+		ref_doctype = c.reference_doctype
+		ref_docname = c.reference_name
+		if ref_doctype == "CRM Call Log":
+			call_log = frappe.db.get_values("CRM Call Log", ref_docname, ["reference_doctype", "reference_docname"])
+			if call_log and call_log[0][0] and call_log[0][1]:
+				ref_doctype = call_log[0][0]
+				ref_docname = call_log[0][1]
+			else:
+				links = frappe.db.get_all("Dynamic Link", filters={"parent": ref_docname, "parenttype": "CRM Call Log"}, fields=["link_doctype", "link_name"])
+				resolved = False
+				for link in links:
+					if link.link_doctype in ["CRM Lead", "CRM Deal", "Contact", "CRM Organization"]:
+						ref_doctype = link.link_doctype
+						ref_docname = link.link_name
+						resolved = True
+						break
+				if not resolved:
+					ref_doctype = "CRM Lead"
+
+		activities.append({
+			"name": c.name,
+			"activity_type": "comment",
+			"creation": c.creation,
+			"owner": c.owner,
+			"content": c.content,
+			"reference_doctype": ref_doctype,
+			"reference_docname": ref_docname
+		})
+
+	# 3. Fetch call logs
+	calls = frappe.db.get_all(
+		"CRM Call Log",
+		or_filters={"owner": user, "caller": user, "receiver": user},
+		fields=[
+			"name", "caller", "receiver", "from", "to", "duration",
+			"start_time", "end_time", "status", "type", "recording_url",
+			"creation", "reference_doctype", "reference_docname"
+		],
+		limit=limit,
+		order_by="creation desc"
+	)
+	for call_log in calls:
+		ref_doctype = call_log.reference_doctype
+		ref_docname = call_log.reference_docname
+		if not ref_doctype or not ref_docname:
+			call_log_links = frappe.db.get_all(
+				"Dynamic Link", 
+				filters={"parent": call_log.name, "parenttype": "CRM Call Log"}, 
+				fields=["link_doctype", "link_name"]
+			)
+			for link in call_log_links:
+				if link.link_doctype in ["CRM Lead", "CRM Deal", "Contact", "CRM Organization"]:
+					ref_doctype = link.link_doctype
+					ref_docname = link.link_name
+					break
+		if not ref_doctype or not ref_docname:
+			ref_doctype = "CRM Lead"
+			ref_docname = ""
+
+		activities.append({
+			"name": call_log.name,
+			"activity_type": "incoming_call" if call_log.type == "Incoming" else "outgoing_call",
+			"creation": call_log.creation,
+			"owner": user,
+			"data": {
+				"status": call_log.status,
+				"duration": call_log.duration,
+				"caller": call_log.caller,
+				"receiver": call_log.receiver
+			},
+			"reference_doctype": ref_doctype,
+			"reference_docname": ref_docname
+		})
+
+	# 4. Fetch notes
+	notes = frappe.db.get_all(
+		"FCRM Note",
+		filters={"owner": user},
+		fields=["name", "title", "content", "owner", "creation", "reference_doctype", "reference_docname"],
+		limit=limit,
+		order_by="creation desc"
+	)
+	for note in notes:
+		activities.append({
+			"name": note.name,
+			"activity_type": "note",
+			"creation": note.creation,
+			"owner": note.owner,
+			"title": note.title,
+			"content": note.content,
+			"reference_doctype": note.reference_doctype or "CRM Lead",
+			"reference_docname": note.reference_docname
+		})
+
+	# 5. Fetch communications (emails)
+	communications = frappe.db.get_all(
+		"Communication",
+		filters={"reference_doctype": ["in", ["CRM Lead", "CRM Deal", "Contact", "CRM Organization"]]},
+		or_filters={"sender": user, "owner": user},
+		fields=[
+			"name", "communication_type", "communication_date", "creation", "subject", "content",
+			"sender_full_name", "sender", "recipients", "cc", "bcc", "read_by_recipient",
+			"delivery_status", "reference_doctype", "reference_name"
+		],
+		limit=limit,
+		order_by="creation desc"
+	)
+	for comm in communications:
+		activities.append({
+			"name": comm.name,
+			"activity_type": "communication",
+			"communication_type": comm.communication_type,
+			"communication_date": comm.communication_date or comm.creation,
+			"creation": comm.creation,
+			"data": {
+				"subject": comm.subject,
+				"content": comm.content,
+				"sender_full_name": comm.sender_full_name,
+				"sender": comm.sender,
+				"recipients": comm.recipients,
+				"cc": comm.cc,
+				"bcc": comm.bcc,
+				"read_by_recipient": comm.read_by_recipient,
+				"delivery_status": comm.delivery_status,
+			},
+			"reference_doctype": comm.reference_doctype,
+			"reference_docname": comm.reference_name
+		})
+
+	# 6. Fetch WhatsApp messages
+	if frappe.db.exists("DocType", "WhatsApp Message"):
+		whatsapp = frappe.db.get_all(
+			"WhatsApp Message",
+			filters={"owner": user},
+			fields=[
+				"name", "type", "to", "from", "content_type", "message_type",
+				"attach", "creation", "message", "status", "reference_doctype", "reference_name"
+			],
+			limit=limit,
+			order_by="creation desc"
+		)
+		for wa in whatsapp:
+			activities.append({
+				"name": wa.name,
+				"activity_type": "whatsapp",
+				"creation": wa.creation,
+				"owner": user,
+				"data": {
+					"type": wa.type,
+					"to": wa.to,
+					"from": wa.get("from"),
+					"content_type": wa.content_type,
+					"message_type": wa.message_type,
+					"attach": wa.attach,
+					"message": wa.message,
+					"status": wa.status
+				},
+				"reference_doctype": wa.reference_doctype or "CRM Lead",
+				"reference_docname": wa.reference_name
+			})
+
+	# 7. Fetch tasks
+	tasks = frappe.db.get_all(
+		"CRM Task",
+		or_filters={"owner": user, "assigned_to": user},
+		fields=[
+			"name", "title", "description", "assigned_to", "due_date", "priority",
+			"status", "creation", "reference_doctype", "reference_docname"
+		],
+		limit=limit,
+		order_by="creation desc"
+	)
+	for task in tasks:
+		activities.append({
+			"name": task.name,
+			"activity_type": "task",
+			"creation": task.creation,
+			"owner": user,
+			"title": task.title,
+			"description": task.description,
+			"assigned_to": task.assigned_to,
+			"status": task.status,
+			"reference_doctype": task.reference_doctype or "CRM Lead",
+			"reference_docname": task.reference_docname
+		})
+
+	# 8. Fetch files/attachments
+	attachments = frappe.db.get_all(
+		"File",
+		filters={"owner": user, "attached_to_doctype": ["in", ["CRM Lead", "CRM Deal", "Contact", "CRM Organization", "CRM Call Log"]]},
+		fields=["name", "file_name", "file_type", "file_url", "file_size", "creation", "attached_to_doctype", "attached_to_name"],
+		limit=limit,
+		order_by="creation desc"
+	)
+	for file in attachments:
+		ref_doctype = file.attached_to_doctype
+		ref_docname = file.attached_to_name
+		if ref_doctype == "CRM Call Log":
+			call_log = frappe.db.get_values("CRM Call Log", ref_docname, ["reference_doctype", "reference_docname"])
+			if call_log and call_log[0][0] and call_log[0][1]:
+				ref_doctype = call_log[0][0]
+				ref_docname = call_log[0][1]
+			else:
+				links = frappe.db.get_all("Dynamic Link", filters={"parent": ref_docname, "parenttype": "CRM Call Log"}, fields=["link_doctype", "link_name"])
+				resolved = False
+				for link in links:
+					if link.link_doctype in ["CRM Lead", "CRM Deal", "Contact", "CRM Organization"]:
+						ref_doctype = link.link_doctype
+						ref_docname = link.link_name
+						resolved = True
+						break
+				if not resolved:
+					ref_doctype = "CRM Lead"
+
+		activities.append({
+			"name": file.name,
+			"activity_type": "attachment_log",
+			"creation": file.creation,
+			"owner": user,
+			"data": {
+				"type": "Attachment",
+				"file_name": file.file_name,
+				"file_url": file.file_url,
+				"is_private": False
+			},
+			"reference_doctype": ref_doctype,
+			"reference_docname": ref_docname
+		})
+
+	activities.sort(key=lambda x: x["creation"], reverse=True)
+	return activities[:limit]
+
+

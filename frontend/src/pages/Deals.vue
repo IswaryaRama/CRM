@@ -269,11 +269,11 @@ import { formatDate, timeAgo, website, formatTime } from '@/utils'
 import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
 import { Tooltip, Avatar, Dropdown } from 'frappe-ui'
 import { useRoute } from 'vue-router'
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, h, onMounted, onBeforeUnmount } from 'vue'
 
 const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
   getMeta('CRM Deal')
-const { makeCall } = globalStore()
+const { $socket, makeCall } = globalStore()
 const { getUser } = usersStore()
 const { getOrganization } = organizationsStore()
 const { getDealStatus } = statusesStore()
@@ -294,6 +294,22 @@ const loadMore = ref(1)
 const triggerResize = ref(1)
 const updatedPageCount = ref(20)
 const viewControls = ref(null)
+
+onMounted(() => {
+  if ($socket) {
+    $socket.on('crm_deal_update', () => {
+      if (deals.value && typeof deals.value.reload === 'function') {
+        deals.value.reload()
+      }
+    })
+  }
+})
+
+onBeforeUnmount(() => {
+  if ($socket) {
+    $socket.off('crm_deal_update')
+  }
+})
 
 function getRow(name, field) {
   function getValue(value) {

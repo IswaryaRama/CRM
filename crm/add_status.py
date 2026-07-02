@@ -1,39 +1,52 @@
 import frappe
 
 def execute():
+    # Rename old status if they exist
+    for old_name, new_name in [
+        ("Interested in Webinar", "Registered for webinar"),
+        ("Interested in webinar", "Registered for webinar"),
+        ("Not interested in Webinar", "Not registered in webinar"),
+        ("Not interested in webinar", "Not registered in webinar"),
+        ("Not paid", "Deal lost"),
+        ("Not Paid", "Deal lost")
+    ]:
+        if frappe.db.exists("CRM Lead Status", old_name) and not frappe.db.exists("CRM Lead Status", new_name):
+            frappe.rename_doc("CRM Lead Status", old_name, new_name, force=True)
+            print(f"Renamed status {old_name} to {new_name}")
+
     statuses = {
         "New": {
             "color": "gray",
             "type": "Open",
             "position": 1,
         },
-        "Interested in webinar": {
+        "Registered for webinar": {
             "color": "blue",
             "type": "Ongoing",
             "position": 2,
         },
-        "Not interested in webinar": {
+        "Not registered in webinar": {
             "color": "red",
             "type": "Lost",
             "position": 3,
         },
-        "Webinar registered": {
+        "Webinar attended": {
             "color": "green",
             "type": "Ongoing",
             "position": 4,
         },
-        "Webinar not registered": {
-            "color": "orange",
+        "Webinar not attended": {
+            "color": "yellow",
             "type": "Ongoing",
             "position": 5,
         },
-        "Test registered": {
-            "color": "green",
+        "Test taken": {
+            "color": "blue",
             "type": "Ongoing",
             "position": 6,
         },
-        "Test not registered": {
-            "color": "red",
+        "Test not taken": {
+            "color": "yellow",
             "type": "Ongoing",
             "position": 7,
         },
@@ -43,13 +56,13 @@ def execute():
             "position": 8,
         },
         "Campus not visited": {
-            "color": "orange",
+            "color": "yellow",
             "type": "Ongoing",
             "position": 9,
         },
-        "Deal Declined": {
+        "Deal lost": {
             "color": "red",
-            "type": "Ongoing",
+            "type": "Lost",
             "position": 10,
         },
     }

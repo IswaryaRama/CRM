@@ -13,4 +13,7 @@ def get_views(doctype: str):
 	if doctype:
 		query = query.where(View.dt == doctype)
 	views = query.run(as_dict=True)
+	for view in views:
+		if view.get("dt") == "CRM Call Log":
+			view["filters"] = "{}"
 	return views

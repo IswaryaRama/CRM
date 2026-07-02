@@ -189,6 +189,11 @@ def update_vobiz_call_status(call_sid: str, status: str, duration: int = 0):
 	call_log.status = status
 	if duration:
 		call_log.duration = duration
+	if frappe.session.user and frappe.session.user != "Guest":
+		if call_log.type == "Incoming":
+			call_log.receiver = frappe.session.user
+		else:
+			call_log.caller = frappe.session.user
 	call_log.save(ignore_permissions=True)
 	frappe.db.commit()
 
@@ -292,7 +297,10 @@ def hangup(**kwargs):
 		"canceled": "Canceled"
 	}
 	
-	new_status = status_map.get(vobiz_status, call_log.status or "Completed")
+	if call_log.status in ["Completed", "Busy", "No Answer", "Canceled"]:
+		new_status = call_log.status
+	else:
+		new_status = status_map.get(vobiz_status, call_log.status or "Completed")
 	call_log.status = new_status
 
 	duration = args.get("Duration") or args.get("duration") or 0
@@ -493,8 +501,22 @@ def upload_recording(call_sid):
 	# Update CRM Call Log
 	call_log = frappe.get_doc("CRM Call Log", call_log_name)
 	call_log.recording_url = saved_file.file_url
+	call_log.status = "Completed"
+	if frappe.session.user and frappe.session.user != "Guest":
+		if call_log.type == "Incoming":
+			call_log.receiver = frappe.session.user
+		else:
+			call_log.caller = frappe.session.user
 	call_log.save(ignore_permissions=True)
 	frappe.db.commit()
+
+	# Publish socket event so frontend knows the recording has been uploaded
+	frappe.publish_realtime("vobiz_call_update", {
+		"CallSid": call_log_name,
+		"Status": call_log.status,
+		"Duration": call_log.duration,
+		"recording_url": saved_file.file_url
+	})
 
 	return {"ok": True, "recording_url": saved_file.file_url}
 
