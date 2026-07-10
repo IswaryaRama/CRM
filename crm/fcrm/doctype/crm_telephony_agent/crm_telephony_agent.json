@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:user",
+ "creation": "2025-01-11 16:12:46.602782",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "user_name",
+  "column_break_hdec",
+  "mobile_no",
+  "default_medium",
+  "section_break_ozjn",
+  "twilio_number",
+  "call_receiving_device",
+  "column_break_aydj",
+  "exotel_number",
+  "vobiz_number",
+  "vobiz_username",
+  "vobiz_password",
+  "section_break_phlq",
+  "phone_nos"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_hdec",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Mobile No.",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "user.full_name",
+   "fieldname": "user_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "User Name"
+  },
+  {
+   "fieldname": "exotel_number",
+   "fieldtype": "Data",
+   "label": "Exotel Number"
+  },
+  {
+   "fieldname": "vobiz_number",
+   "fieldtype": "Data",
+   "label": "WebRTC Number"
+  },
+  {
+   "fieldname": "vobiz_username",
+   "fieldtype": "Data",
+   "label": "WebRTC Username"
+  },
+  {
+   "fieldname": "vobiz_password",
+   "fieldtype": "Password",
+   "label": "WebRTC Password"
+  },
+  {
+   "fieldname": "section_break_phlq",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_ozjn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_aydj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "twilio_number",
+   "fieldtype": "Data",
+   "label": "Twilio Number"
+  },
+  {
+   "fieldname": "phone_nos",
+   "fieldtype": "Table",
+   "label": "Phone Numbers",
+   "options": "CRM Telephony Phone"
+  },
+  {
+   "fieldname": "default_medium",
+   "fieldtype": "Select",
+   "label": "Default Medium",
+   "options": "\nTwilio\nExotel\nVobiz"
+  },
+  {
+   "default": "Computer",
+   "fieldname": "call_receiving_device",
+   "fieldtype": "Select",
+   "label": "Device",
+   "options": "Computer\nPhone"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-12 13:52:36.481382",
+ "modified_by": "Administrator",
+ "module": "FCRM",
+ "name": "CRM Telephony Agent",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "user_name"
+}

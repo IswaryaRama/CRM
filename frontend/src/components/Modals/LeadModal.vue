@@ -1,0 +1,222 @@
+<template>
+  <Dialog v-model="show" :options="{ size: '3xl' }">
+    <template #body>
+      <div class="bg-surface-modal px-4 pb-6 pt-5 sm:px-6">
+        <div class="mb-5 flex items-center justify-between">
+          <div>
+            <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
+              {{ __('Create Lead') }}
+            </h3>
+          </div>
+          <div class="flex items-center gap-1">
+            <Button
+              v-if="isManager() && !isMobileView"
+              variant="ghost"
+              class="w-7"
+              :tooltip="__('Edit Fields Layout')"
+              :icon="EditIcon"
+              @click="openQuickEntryModal"
+            />
+            <Button
+              variant="ghost"
+              class="w-7"
+              icon="x"
+              @click="show = false"
+            />
+          </div>
+        </div>
+        <div>
+          <FieldLayout v-if="tabs.data" :tabs="tabs.data" :data="lead.doc" />
+          <ErrorMessage v-if="error" class="mt-4" :message="__(error)" />
+        </div>
+      </div>
+      <div class="px-4 pb-7 pt-4 sm:px-6">
+        <div class="flex flex-row-reverse gap-2">
+          <Button
+            variant="solid"
+            :label="__('Create')"
+            :loading="isLeadCreating"
+            @click="createNewLead"
+          />
+        </div>
+      </div>
+    </template>
+  </Dialog>
+</template>
+
+<script setup>
+import EditIcon from '@/components/Icons/EditIcon.vue'
+import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
+import { usersStore } from '@/stores/users'
+import { statusesStore } from '@/stores/statuses'
+import { sessionStore } from '@/stores/session'
+import { isMobileView } from '@/composables/settings'
+import { showQuickEntryModal, quickEntryProps } from '@/composables/modals'
+import { useOnboarding, useTelemetry } from 'frappe-ui/frappe'
+import { createResource } from 'frappe-ui'
+import { useDocument } from '@/data/document'
+import { computed, onMounted, ref, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+
+const props = defineProps({
+  defaults: { type: Object, default: () => ({}) },
+})
+
+const { user } = sessionStore()
+const { getUser, isManager } = usersStore()
+const { getLeadStatus, statusOptions } = statusesStore()
+const { updateOnboardingStep } = useOnboarding('frappecrm')
+
+const show = defineModel({ type: Boolean })
+const router = useRouter()
+const error = ref(null)
+const isLeadCreating = ref(false)
+
+const { document: lead, triggerOnBeforeCreate } = useDocument('CRM Lead')
+
+const { capture } = useTelemetry()
+
+const leadStatuses = computed(() => statusOptions('lead'))
+
+const tabs = createResource({
+  url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
+  cache: ['QuickEntry', 'CRM Lead'],
+  params: { doctype: 'CRM Lead', type: 'Quick Entry' },
+  auto: true,
+  transform: (_tabs) => {
+    _tabs?.forEach((tab) => {
+      tab.sections?.forEach((section) => {
+        section.columns?.forEach((column) => {
+          column.fields?.forEach((field) => {
+            if (field.fieldname == 'status') {
+              field.fieldtype = 'Select'
+              field.options = leadStatuses.value
+              field.prefix = getLeadStatus(lead.doc.status)?.color
+            }
+
+            if (field.fieldtype === 'Table') {
+              lead.doc[field.fieldname] = []
+            }
+          })
+        })
+      })
+    })
+    return _tabs
+  },
+})
+
+import { watch } from 'vue'
+watch(
+  () => [leadStatuses.value, tabs.data],
+  ([newStatuses, tabsData]) => {
+    if (tabsData && newStatuses && newStatuses.length) {
+      tabsData.forEach((tab) => {
+        tab.sections?.forEach((section) => {
+          section.columns?.forEach((column) => {
+            column.fields?.forEach((field) => {
+              if (field.fieldname == 'status') {
+                field.options = newStatuses
+                field.prefix = getLeadStatus(lead.doc.status)?.color
+              }
+            })
+          })
+        })
+      })
+      if (!lead.doc.status && newStatuses[0]?.value) {
+        lead.doc.status = newStatuses[0].value
+      }
+    }
+  },
+  { deep: true, immediate: true }
+)
+
+const createLead = createResource({
+  url: 'frappe.client.insert',
+})
+
+async function createNewLead() {
+  if (lead.doc.website && !lead.doc.website.startsWith('http')) {
+    lead.doc.website = 'https://' + lead.doc.website
+  }
+
+  await triggerOnBeforeCreate?.()
+
+  createLead.submit(
+    {
+      doc: {
+        doctype: 'CRM Lead',
+        ...lead.doc,
+      },
+    },
+    {
+      validate() {
+        error.value = null
+        if (!lead.doc.first_name) {
+          error.value = __('First Name is mandatory')
+          return error.value
+        }
+        if (lead.doc.annual_revenue) {
+          if (typeof lead.doc.annual_revenue === 'string') {
+            lead.doc.annual_revenue = lead.doc.annual_revenue.replace(/,/g, '')
+          } else if (isNaN(lead.doc.annual_revenue)) {
+            error.value = __('Annual Revenue should be a number')
+            return error.value
+          }
+        }
+        if (
+          lead.doc.mobile_no &&
+          isNaN(lead.doc.mobile_no.replace(/[-+() ]/g, ''))
+        ) {
+          error.value = __('Mobile No. should be a number')
+          return error.value
+        }
+        if (lead.doc.email && !lead.doc.email.includes('@')) {
+          error.value = __('Invalid email address')
+          return error.value
+        }
+        if (!lead.doc.status) {
+          error.value = __('Status is required')
+          return error.value
+        }
+        isLeadCreating.value = true
+      },
+      onSuccess(data) {
+        capture('lead_created')
+        isLeadCreating.value = false
+        show.value = false
+        lead.doc = {}
+        router.push({ name: 'Lead', params: { leadId: data.name } })
+        updateOnboardingStep('create_first_lead', true, false, () => {
+          localStorage.setItem('firstLead' + user, data.name)
+        })
+      },
+      onError(err) {
+        isLeadCreating.value = false
+        if (!err.messages) {
+          error.value = err.message
+          return
+        }
+        error.value = err.messages.join('\n')
+      },
+    },
+  )
+}
+
+function openQuickEntryModal() {
+  showQuickEntryModal.value = true
+  quickEntryProps.value = { doctype: 'CRM Lead' }
+  nextTick(() => (show.value = false))
+}
+
+onMounted(() => {
+  lead.doc.no_of_employees = '1-10'
+  Object.assign(lead.doc, props.defaults)
+
+  if (!lead.doc?.lead_owner) {
+    lead.doc.lead_owner = getUser().name
+  }
+  if (!lead.doc?.status && leadStatuses.value[0]?.value) {
+    lead.doc.status = leadStatuses.value[0].value
+  }
+})
+</script>

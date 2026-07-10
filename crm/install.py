@@ -1,0 +1,570 @@
+# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# MIT License. See license.txt
+import json
+
+import click
+import frappe
+from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+
+from crm.fcrm.doctype.crm_dashboard.crm_dashboard import create_default_manager_dashboard
+from crm.fcrm.doctype.crm_products.crm_products import create_product_details_script
+
+
+def before_install():
+	pass
+
+
+def after_install(force=False):
+	add_default_lead_statuses()
+	add_default_deal_statuses()
+	add_default_communication_statuses()
+	add_default_fields_layout(force)
+	add_property_setter()
+	add_email_template_custom_fields()
+	add_email_account_custom_field()
+	add_user_reports_to_custom_field()
+	add_default_industries()
+	add_default_lead_sources()
+	add_default_lost_reasons()
+	add_default_quick_filters()
+	add_standard_dropdown_items()
+	add_default_scripts()
+	create_default_manager_dashboard(force)
+	create_assignment_rule_custom_fields()
+	add_assignment_rule_property_setters()
+	frappe.db.commit()
+
+
+def add_default_lead_statuses():
+	statuses = {
+		"New": {
+			"color": "gray",
+			"type": "Open",
+			"position": 1,
+		},
+		"Contacted": {
+			"color": "blue",
+			"type": "Ongoing",
+			"position": 2,
+		},
+		"No response": {
+			"color": "yellow",
+			"type": "Ongoing",
+			"position": 3,
+		},
+		"Not interested": {
+			"color": "red",
+			"type": "Lost",
+			"position": 4,
+		},
+		"Interested to visit campus": {
+			"color": "green",
+			"type": "Ongoing",
+			"position": 5,
+		},
+		"Follow up": {
+			"color": "orange",
+			"type": "Ongoing",
+			"position": 6,
+		},
+	}
+
+	for status in statuses:
+		if frappe.db.exists("CRM Lead Status", status):
+			continue
+
+		doc = frappe.new_doc("CRM Lead Status")
+		doc.lead_status = status
+		doc.color = statuses[status]["color"]
+		doc.type = statuses[status]["type"]
+		doc.position = statuses[status]["position"]
+		doc.insert()
+
+
+def add_default_deal_statuses():
+	statuses = {
+		"Negotiation": {
+			"color": "yellow",
+			"type": "Open",
+			"probability": 30,
+			"position": 1,
+		},
+		"Ready to Close": {
+			"color": "purple",
+			"type": "Ongoing",
+			"probability": 70,
+			"position": 2,
+		},
+		"Seat Reserved": {
+			"color": "green",
+			"type": "Won",
+			"probability": 100,
+			"position": 3,
+		},
+		"Seat Not Reserved": {
+			"color": "red",
+			"type": "Lost",
+			"probability": 0,
+			"position": 4,
+		},
+	}
+
+	for status in statuses:
+		if frappe.db.exists("CRM Deal Status", status):
+			continue
+
+		doc = frappe.new_doc("CRM Deal Status")
+		doc.deal_status = status
+		doc.color = statuses[status]["color"]
+		doc.type = statuses[status]["type"]
+		doc.probability = statuses[status]["probability"]
+		doc.position = statuses[status]["position"]
+		doc.insert()
+
+
+def add_default_communication_statuses():
+	statuses = ["Open", "Replied"]
+
+	for status in statuses:
+		if frappe.db.exists("CRM Communication Status", status):
+			continue
+
+		doc = frappe.new_doc("CRM Communication Status")
+		doc.status = status
+		doc.insert()
+
+
+def add_default_fields_layout(force=False):
+	quick_entry_layouts = {
+		"CRM Lead-Quick Entry": {
+			"doctype": "CRM Lead",
+			"layout": '[{"name": "person_section", "columns": [{"name": "column_5jrk", "fields": ["salutation", "email"]}, {"name": "column_5CPV", "fields": ["first_name", "mobile_no"]}, {"name": "column_gXOy", "fields": ["last_name", "gender"]}]}, {"name": "organization_section", "columns": [{"name": "column_GHfX", "fields": ["organization", "territory"]}, {"name": "column_hXjS", "fields": ["website", "annual_revenue"]}, {"name": "column_RDNA", "fields": ["no_of_employees", "industry"]}]}, {"name": "lead_section", "columns": [{"name": "column_EO1H", "fields": ["status"]}, {"name": "column_RWBe", "fields": ["lead_owner"]}]}]',
+		},
+		"CRM Deal-Quick Entry": {
+			"doctype": "CRM Deal",
+			"layout": '[{"name": "organization_section", "hidden": true, "editable": false, "columns": [{"name": "column_GpMP", "fields": ["organization"]}, {"name": "column_FPTn", "fields": []}]}, {"name": "organization_details_section", "editable": false, "columns": [{"name": "column_S3tQ", "fields": ["organization_name", "territory"]}, {"name": "column_KqV1", "fields": ["website", "annual_revenue"]}, {"name": "column_1r67", "fields": ["no_of_employees", "industry"]}]}, {"name": "contact_section", "hidden": true, "editable": false, "columns": [{"name": "column_CeXr", "fields": ["contact"]}, {"name": "column_yHbk", "fields": []}]}, {"name": "contact_details_section", "editable": false, "columns": [{"name": "column_ZTWr", "fields": ["salutation", "email"]}, {"name": "column_tabr", "fields": ["first_name", "mobile_no"]}, {"name": "column_Qjdx", "fields": ["last_name", "gender"]}]}, {"name": "deal_section", "columns": [{"name": "column_mdps", "fields": ["status"]}, {"name": "column_H40H", "fields": ["deal_owner"]}]}]',
+		},
+		"Contact-Quick Entry": {
+			"doctype": "Contact",
+			"layout": '[{"name": "salutation_section", "columns": [{"name": "column_eXks", "fields": ["salutation"]}]}, {"name": "full_name_section", "hideBorder": true, "columns": [{"name": "column_cSxf", "fields": ["first_name"]}, {"name": "column_yBc7", "fields": ["last_name"]}]}, {"name": "email_section", "hideBorder": true, "columns": [{"name": "column_tH3L", "fields": ["email_id"]}]}, {"name": "mobile_gender_section", "hideBorder": true, "columns": [{"name": "column_lrfI", "fields": ["mobile_no"]}, {"name": "column_Tx3n", "fields": ["gender"]}]}, {"name": "organization_section", "hideBorder": true, "columns": [{"name": "column_S0J8", "fields": ["company_name"]}]}, {"name": "designation_section", "hideBorder": true, "columns": [{"name": "column_bsO8", "fields": ["designation"]}]}, {"name": "address_section", "hideBorder": true, "columns": [{"name": "column_W3VY", "fields": ["address"]}]}]',
+		},
+		"CRM Organization-Quick Entry": {
+			"doctype": "CRM Organization",
+			"layout": '[{"name": "organization_section", "columns": [{"name": "column_zOuv", "fields": ["organization_name"]}]}, {"name": "website_revenue_section", "hideBorder": true, "columns": [{"name": "column_I5Dy", "fields": ["website"]}, {"name": "column_Rgss", "fields": ["annual_revenue"]}]}, {"name": "territory_section", "hideBorder": true, "columns": [{"name": "column_w6ap", "fields": ["territory"]}]}, {"name": "employee_industry_section", "hideBorder": true, "columns": [{"name": "column_u5tZ", "fields": ["no_of_employees"]}, {"name": "column_FFrT", "fields": ["industry"]}]}, {"name": "address_section", "hideBorder": true, "columns": [{"name": "column_O2dk", "fields": ["address"]}]}]',
+		},
+		"Address-Quick Entry": {
+			"doctype": "Address",
+			"layout": '[{"name": "details_section", "columns": [{"name": "column_uSSG", "fields": ["address_title", "address_type", "address_line1", "address_line2", "city", "state", "country", "pincode"]}]}]',
+		},
+		"CRM Call Log-Quick Entry": {
+			"doctype": "CRM Call Log",
+			"layout": '[{"name":"details_section","columns":[{"name":"column_uMSG","fields":["type","from","duration"]},{"name":"column_wiZT","fields":["to","status","caller","receiver"]}]}]',
+		},
+		"FCRM Note-Quick Entry": {
+			"doctype": "FCRM Note",
+			"layout": '[{"name":"details_section","columns":[{"name":"column_o2s9","fields":["title", "content"]}]}]',
+		},
+		"CRM Task-Quick Entry": {
+			"doctype": "CRM Task",
+			"layout": '[{"name":"first_tab","sections":[{"name":"details_section","columns":[{"name":"column_X9sG","fields":["title","description"]}]},{"name":"assignment_section","columns":[{"name":"column_9XjK","fields":["priority","due_date"]},{"name":"column_7s8n","fields":["assigned_to","status"]}],"hideBorder":true}]}]',
+		},
+	}
+
+	sidebar_fields_layouts = {
+		"CRM Lead-Side Panel": {
+			"doctype": "CRM Lead",
+			"layout": '[{"label": "Details", "name": "details_section", "opened": true, "columns": [{"name": "column_kl92", "fields": ["organization", "website", "territory", "industry", "job_title", "source", "lead_owner"]}]}, {"label": "Person", "name": "person_section", "opened": true, "columns": [{"name": "column_XmW2", "fields": ["salutation", "first_name", "last_name", "email", "mobile_no"]}]}]',
+		},
+		"CRM Deal-Side Panel": {
+			"doctype": "CRM Deal",
+			"layout": '[{"label": "Contacts", "name": "contacts_section", "opened": true, "editable": false, "contacts": []}, {"label": "Organization Details", "name": "organization_section", "opened": true, "columns": [{"name": "column_na2Q", "fields": ["organization", "website", "territory", "annual_revenue", "closed_date", "probability", "next_step", "deal_owner"]}]}]',
+		},
+		"Contact-Side Panel": {
+			"doctype": "Contact",
+			"layout": '[{"label": "Details", "name": "details_section", "opened": true, "columns": [{"name": "column_eIWl", "fields": ["salutation", "first_name", "last_name", "email_id", "mobile_no", "gender", "company_name", "designation", "address"]}]}]',
+		},
+		"CRM Organization-Side Panel": {
+			"doctype": "CRM Organization",
+			"layout": '[{"label": "Details", "name": "details_section", "opened": true, "columns": [{"name": "column_IJOV", "fields": ["organization_name", "website", "territory", "industry", "no_of_employees", "address"]}]}]',
+		},
+	}
+
+	data_fields_layouts = {
+		"CRM Lead-Data Fields": {
+			"doctype": "CRM Lead",
+			"layout": '[{"label": "Details", "name": "details_section", "opened": true, "columns": [{"name": "column_ZgLG", "fields": ["organization", "industry", "lead_owner"]}, {"name": "column_TbYq", "fields": ["website", "job_title"]}, {"name": "column_OKSX", "fields": ["territory", "source"]}]}, {"label": "Person", "name": "person_section", "opened": true, "columns": [{"name": "column_6c5g", "fields": ["salutation", "email"]}, {"name": "column_1n7Q", "fields": ["first_name", "mobile_no"]}, {"name": "column_cT6C", "fields": ["last_name"]}]}]',
+		},
+		"CRM Deal-Data Fields": {
+			"doctype": "CRM Deal",
+			"layout": '[{"name":"first_tab","sections":[{"label":"Details","name":"details_section","opened":true,"columns":[{"name":"column_z9XL","fields":["organization","annual_revenue","next_step"]},{"name":"column_gM4w","fields":["website","closed_date","deal_owner"]},{"name":"column_gWmE","fields":["territory","probability"]}]},{"label":"Products","name":"section_jHhQ","opened":true,"columns":[{"name":"column_xiNF","fields":["products"]}],"editingLabel":false,"hideLabel":true},{"label":"New Section","name":"section_WNOQ","opened":true,"columns":[{"name":"column_ziBW","fields":["total"]},{"label":"","name":"column_wuwA","fields":["net_total"]}],"hideBorder":true,"hideLabel":true}]}]',
+		},
+	}
+
+	for layout in quick_entry_layouts:
+		if frappe.db.exists("CRM Fields Layout", layout):
+			if force:
+				frappe.delete_doc("CRM Fields Layout", layout)
+			else:
+				continue
+
+		doc = frappe.new_doc("CRM Fields Layout")
+		doc.type = "Quick Entry"
+		doc.dt = quick_entry_layouts[layout]["doctype"]
+		doc.layout = quick_entry_layouts[layout]["layout"]
+		doc.insert()
+
+	for layout in sidebar_fields_layouts:
+		if frappe.db.exists("CRM Fields Layout", layout):
+			if force:
+				frappe.delete_doc("CRM Fields Layout", layout)
+			else:
+				continue
+
+		doc = frappe.new_doc("CRM Fields Layout")
+		doc.type = "Side Panel"
+		doc.dt = sidebar_fields_layouts[layout]["doctype"]
+		doc.layout = sidebar_fields_layouts[layout]["layout"]
+		doc.insert()
+
+	for layout in data_fields_layouts:
+		if frappe.db.exists("CRM Fields Layout", layout):
+			if force:
+				frappe.delete_doc("CRM Fields Layout", layout)
+			else:
+				continue
+
+		doc = frappe.new_doc("CRM Fields Layout")
+		doc.type = "Data Fields"
+		doc.dt = data_fields_layouts[layout]["doctype"]
+		doc.layout = data_fields_layouts[layout]["layout"]
+		doc.insert()
+
+
+def add_property_setter():
+	if not frappe.db.exists("Property Setter", {"name": "Contact-main-search_fields"}):
+		doc = frappe.new_doc("Property Setter")
+		doc.doctype_or_field = "DocType"
+		doc.doc_type = "Contact"
+		doc.property = "search_fields"
+		doc.property_type = "Data"
+		doc.value = "email_id"
+		doc.insert()
+
+
+def add_email_template_custom_fields():
+	meta = frappe.get_meta("Email Template")
+
+	fields = [
+		{
+			"default": "0",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"label": "Enabled",
+			"insert_after": "",
+		},
+		{
+			"fieldname": "reference_doctype",
+			"fieldtype": "Link",
+			"label": "Doctype",
+			"options": "DocType",
+			"insert_after": "enabled",
+		},
+	]
+
+	fields = [field for field in fields if not meta.has_field(field["fieldname"])]
+	if not fields:
+		return
+
+	click.secho("* Installing Custom Fields in Email Template")
+	create_custom_fields({"Email Template": fields})
+	frappe.clear_cache(doctype="Email Template")
+
+
+def add_email_account_custom_field():
+	if not frappe.get_meta("Email Account").has_field("create_lead_from_incoming_email"):
+		click.secho("* Installing Custom Fields in Email Account")
+
+		create_custom_fields(
+			{
+				"Email Account": [
+					{
+						"default": "0",
+						"fieldname": "create_lead_from_incoming_email",
+						"fieldtype": "Check",
+						"label": "Create Lead from Incoming Emails",
+						"description": "Automatically create a lead when an incoming email is received from an unknown contact",
+						"insert_after": "create_contact",
+					}
+				]
+			}
+		)
+
+		frappe.clear_cache(doctype="Email Account")
+
+
+def add_default_industries():
+	industries = [
+		"Accounting",
+		"Advertising",
+		"Aerospace",
+		"Agriculture",
+		"Airline",
+		"Apparel & Accessories",
+		"Automotive",
+		"Banking",
+		"Biotechnology",
+		"Broadcasting",
+		"Brokerage",
+		"Chemical",
+		"Computer",
+		"Consulting",
+		"Consumer Products",
+		"Cosmetics",
+		"Defense",
+		"Department Stores",
+		"Education",
+		"Electronics",
+		"Energy",
+		"Entertainment & Leisure, Executive Search",
+		"Financial Services",
+		"Food",
+		"Beverage & Tobacco",
+		"Grocery",
+		"Health Care",
+		"Internet Publishing",
+		"Investment Banking",
+		"Legal",
+		"Manufacturing",
+		"Motion Picture & Video",
+		"Music",
+		"Newspaper Publishers",
+		"Online Auctions",
+		"Pension Funds",
+		"Pharmaceuticals",
+		"Private Equity",
+		"Publishing",
+		"Real Estate",
+		"Retail & Wholesale",
+		"Securities & Commodity Exchanges",
+		"Service",
+		"Soap & Detergent",
+		"Software",
+		"Sports",
+		"Technology",
+		"Telecommunications",
+		"Television",
+		"Transportation",
+		"Venture Capital",
+	]
+
+	for industry in industries:
+		if frappe.db.exists("CRM Industry", industry):
+			continue
+
+		doc = frappe.new_doc("CRM Industry")
+		doc.industry = industry
+		doc.insert()
+
+
+def add_default_lead_sources():
+	lead_sources = [
+		"Email",
+		"Existing Customer",
+		"Reference",
+		"Advertisement",
+		"Cold Calling",
+		"Exhibition",
+		"Supplier Reference",
+		"Mass Mailing",
+		"Customer's Vendor",
+		"Campaign",
+		"Walk In",
+		"Facebook",
+		"Website",
+	]
+
+	for source in lead_sources:
+		if frappe.db.exists("CRM Lead Source", source):
+			continue
+
+		doc = frappe.new_doc("CRM Lead Source")
+		doc.source_name = source
+		doc.insert()
+
+
+def add_default_lost_reasons():
+	lost_reasons = [
+		{
+			"reason": "Pricing",
+			"description": "The prospect found the pricing to be too high or not competitive.",
+		},
+		{"reason": "Competition", "description": "The prospect chose a competitor's product or service."},
+		{
+			"reason": "Budget Constraints",
+			"description": "The prospect did not have the budget to proceed with the purchase.",
+		},
+		{
+			"reason": "Missing Features",
+			"description": "The prospect felt that the product or service was missing key features they needed.",
+		},
+		{
+			"reason": "Long Sales Cycle",
+			"description": "The sales process took too long, leading to loss of interest.",
+		},
+		{
+			"reason": "No Decision-Maker",
+			"description": "The prospect was not the decision-maker and could not proceed.",
+		},
+		{"reason": "Unresponsive Prospect", "description": "The prospect did not respond to follow-ups."},
+		{"reason": "Poor Fit", "description": "The prospect was not a good fit for the product or service."},
+		{"reason": "Other", "description": ""},
+	]
+
+	for reason in lost_reasons:
+		if frappe.db.exists("CRM Lost Reason", reason["reason"]):
+			continue
+
+		doc = frappe.new_doc("CRM Lost Reason")
+		doc.lost_reason = reason["reason"]
+		doc.description = reason["description"]
+		doc.insert()
+
+
+def add_default_quick_filters():
+	quick_filters = {
+		"CRM Lead": ["lead_name", "email", "organization", "status", "source"],
+		"CRM Deal": ["organization", "status", "probability", "email"],
+		"Contact": ["status", "email_id", "phone"],
+		"CRM Organization": ["organization_name", "no_of_employees", "territory", "industry"],
+		"CRM Task": ["title", "priority", "assigned_to", "status", "due_date"],
+		"CRM Call Log": ["caller", "status", "from", "to", "call_date"],
+	}
+
+	for quick_filter in quick_filters:
+		if frappe.db.exists("CRM Global Settings", {"dt": quick_filter}):
+			continue
+
+		doc = frappe.new_doc("CRM Global Settings")
+		doc.dt = quick_filter
+		doc.json = json.dumps(quick_filters[quick_filter])
+		doc.insert()
+
+
+def add_standard_dropdown_items():
+	crm_settings = frappe.get_single("FCRM Settings")
+
+	# don't add dropdown items if they're already present
+	if crm_settings.dropdown_items:
+		return
+
+	crm_settings.dropdown_items = []
+
+	for item in frappe.get_hooks("standard_dropdown_items"):
+		crm_settings.append("dropdown_items", item)
+
+	crm_settings.save()
+
+
+def add_default_scripts():
+	from crm.fcrm.doctype.fcrm_settings.fcrm_settings import create_forecasting_script
+
+	for doctype in ["CRM Lead", "CRM Deal"]:
+		create_product_details_script(doctype)
+	create_forecasting_script()
+
+
+def add_assignment_rule_property_setters():
+	"""Add a property setter to the Assignment Rule DocType for assign_condition and unassign_condition."""
+
+	default_fields = {
+		"doctype": "Property Setter",
+		"doctype_or_field": "DocField",
+		"doc_type": "Assignment Rule",
+		"property_type": "Data",
+		"is_system_generated": 1,
+	}
+
+	if not frappe.db.exists("Property Setter", {"name": "Assignment Rule-assign_condition-depends_on"}):
+		frappe.get_doc(
+			{
+				**default_fields,
+				"name": "Assignment Rule-assign_condition-depends_on",
+				"field_name": "assign_condition",
+				"property": "depends_on",
+				"value": "eval: !doc.assign_condition_json",
+			}
+		).insert()
+	else:
+		frappe.db.set_value(
+			"Property Setter",
+			{"name": "Assignment Rule-assign_condition-depends_on"},
+			"value",
+			"eval: !doc.assign_condition_json",
+		)
+	if not frappe.db.exists("Property Setter", {"name": "Assignment Rule-unassign_condition-depends_on"}):
+		frappe.get_doc(
+			{
+				**default_fields,
+				"name": "Assignment Rule-unassign_condition-depends_on",
+				"field_name": "unassign_condition",
+				"property": "depends_on",
+				"value": "eval: !doc.unassign_condition_json",
+			}
+		).insert()
+	else:
+		frappe.db.set_value(
+			"Property Setter",
+			{"name": "Assignment Rule-unassign_condition-depends_on"},
+			"value",
+			"eval: !doc.unassign_condition_json",
+		)
+
+
+def create_assignment_rule_custom_fields():
+	if not frappe.get_meta("Assignment Rule").has_field("assign_condition_json"):
+		click.secho("* Installing Custom Fields in Assignment Rule")
+
+		create_custom_fields(
+			{
+				"Assignment Rule": [
+					{
+						"description": "Autogenerated field by CRM App",
+						"fieldname": "assign_condition_json",
+						"fieldtype": "Code",
+						"label": "Assign Condition JSON",
+						"insert_after": "assign_condition",
+						"depends_on": "eval: doc.assign_condition_json",
+					},
+					{
+						"description": "Autogenerated field by CRM App",
+						"fieldname": "unassign_condition_json",
+						"fieldtype": "Code",
+						"label": "Unassign Condition JSON",
+						"insert_after": "unassign_condition",
+						"depends_on": "eval: doc.unassign_condition_json",
+					},
+				],
+			}
+		)
+
+		frappe.clear_cache(doctype="Assignment Rule")
+
+
+def add_user_reports_to_custom_field():
+	if not frappe.get_meta("User").has_field("reports_to"):
+		click.secho("* Installing Custom Fields in User")
+		create_custom_fields(
+			{
+				"User": [
+					{
+						"fieldname": "reports_to",
+						"fieldtype": "Link",
+						"options": "User",
+						"label": "Reports To",
+						"insert_after": "language",
+					}
+				]
+			}
+		)
+		frappe.clear_cache(doctype="User")
+

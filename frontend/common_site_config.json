@@ -1,0 +1,4 @@
+{
+  "socketio_port": 9005,
+  "webserver_port": 8005
+}

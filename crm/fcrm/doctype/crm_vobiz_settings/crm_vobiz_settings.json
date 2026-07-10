@@ -1,0 +1,133 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-04 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "column_break_uxtz",
+  "record_calls",
+  "section_break_kfez",
+  "auth_id",
+  "column_break_qwfn",
+  "api_password",
+  "section_break_webhook",
+  "app_id",
+  "webhook_url_override",
+  "websocket_url_override",
+  "column_break_webhook",
+  "registered_webhook_url"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "default": "0",
+   "depends_on": "enabled",
+   "fieldname": "record_calls",
+   "fieldtype": "Check",
+   "label": "Record Outgoing Calls"
+  },
+  {
+   "fieldname": "column_break_uxtz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_kfez",
+   "fieldtype": "Section Break",
+   "hide_border": 1
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "auth_id",
+   "fieldtype": "Data",
+   "label": "Auth ID",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "column_break_qwfn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "api_password",
+   "fieldtype": "Password",
+   "label": "API Password",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "section_break_webhook",
+   "fieldtype": "Section Break",
+   "label": "Webhook Configuration"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "app_id",
+   "fieldtype": "Data",
+   "label": "Vobiz Application ID"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "webhook_url_override",
+   "fieldtype": "Data",
+   "label": "Webhook URL Override"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "websocket_url_override",
+   "fieldtype": "Data",
+   "label": "WebSocket URL Override"
+  },
+  {
+   "fieldname": "column_break_webhook",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "registered_webhook_url",
+   "fieldtype": "Data",
+   "label": "Registered Webhook URL",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-04 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "FCRM",
+ "name": "CRM Vobiz Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

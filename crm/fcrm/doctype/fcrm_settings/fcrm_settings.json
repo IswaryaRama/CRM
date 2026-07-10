@@ -1,0 +1,232 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-09-29 13:48:02.715924",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "defaults_tab",
+  "restore_defaults",
+  "restore_demo_data",
+  "enable_forecasting",
+  "enable_sales_hierarchy",
+  "auto_update_expected_deal_value",
+  "update_timestamp_on_new_communication",
+  "auto_mark_replied_on_response",
+  "auto_reopen_on_new_communication",
+  "currency_tab",
+  "currency",
+  "exchange_rate_provider_section",
+  "service_provider",
+  "column_break_vqck",
+  "access_key",
+  "branding_tab",
+  "brand_name",
+  "brand_logo",
+  "favicon",
+  "calendar_tab",
+  "default_reminder_section",
+  "default_calendar_view",
+  "event_notifications",
+  "all_day_event_notifications",
+  "dropdown_items_tab",
+  "dropdown_items"
+ ],
+ "fields": [
+  {
+   "fieldname": "restore_defaults",
+   "fieldtype": "Button",
+   "label": "Restore Defaults"
+  },
+  {
+   "fieldname": "dropdown_items",
+   "fieldtype": "Table",
+   "options": "CRM Dropdown Item"
+  },
+  {
+   "fieldname": "defaults_tab",
+   "fieldtype": "Tab Break",
+   "label": "Settings"
+  },
+  {
+   "fieldname": "branding_tab",
+   "fieldtype": "Tab Break",
+   "label": "Branding"
+  },
+  {
+   "description": "An image with 1:1 & 2:1 ratio is preferred",
+   "fieldname": "brand_logo",
+   "fieldtype": "Attach",
+   "label": "Logo"
+  },
+  {
+   "fieldname": "dropdown_items_tab",
+   "fieldtype": "Tab Break",
+   "label": "Dropdown items"
+  },
+  {
+   "fieldname": "brand_name",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "description": "An icon file with .ico extension. Should be 16 x 16 px. Generated using a favicon generator. [favicon-generator.org]",
+   "fieldname": "favicon",
+   "fieldtype": "Attach",
+   "label": "Favicon"
+  },
+  {
+   "default": "0",
+   "description": "It will make deal's \"Expected Closure Date\" & \"Expected Deal Value\" mandatory to get accurate forecasting insights",
+   "fieldname": "enable_forecasting",
+   "fieldtype": "Check",
+   "label": "Enable Forecasting"
+  },
+  {
+   "default": "0",
+   "description": "Restrict Lead and Deal visibility based on the Sales Hierarchy tree. Managers can see all records owned by or assigned to their reports.",
+   "fieldname": "enable_sales_hierarchy",
+   "fieldtype": "Check",
+   "label": "Enable Sales Hierarchy Permissions"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "currency_tab",
+   "fieldtype": "Tab Break",
+   "label": "Currency"
+  },
+  {
+   "fieldname": "exchange_rate_provider_section",
+   "fieldtype": "Section Break",
+   "label": "Exchange Rate Provider"
+  },
+  {
+   "default": "frankfurter.app",
+   "fieldname": "service_provider",
+   "fieldtype": "Select",
+   "label": "Service Provider",
+   "options": "frankfurter.app\nfawazahmed-exchange-api\nexchangerate.host\nexchangerate-api"
+  },
+  {
+   "depends_on": "eval:doc.service_provider == 'exchangerate.host';",
+   "fieldname": "access_key",
+   "fieldtype": "Data",
+   "label": "Access Key",
+   "mandatory_depends_on": "eval:doc.service_provider == 'exchangerate.host';"
+  },
+  {
+   "fieldname": "column_break_vqck",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Automatically update \"Expected Deal Value\" based on the total value of associated products in a deal",
+   "fieldname": "auto_update_expected_deal_value",
+   "fieldtype": "Check",
+   "label": "Auto update Expected Deal Value"
+  },
+  {
+   "fieldname": "calendar_tab",
+   "fieldtype": "Tab Break",
+   "label": "Calendar"
+  },
+  {
+   "description": "Time before the event when a reminder notification will be sent by default. This will be applied to all events unless a custom notification is set for a specific event.",
+   "fieldname": "default_reminder_section",
+   "fieldtype": "Section Break",
+   "label": "Default Event Notifications"
+  },
+  {
+   "fieldname": "event_notifications",
+   "fieldtype": "Table",
+   "label": "Event Notifications",
+   "options": "Event Notifications"
+  },
+  {
+   "fieldname": "all_day_event_notifications",
+   "fieldtype": "Table",
+   "label": "All Day Event Notifications",
+   "options": "Event Notifications"
+  },
+  {
+   "default": "Weekly",
+   "fieldname": "default_calendar_view",
+   "fieldtype": "Select",
+   "label": "Default Calendar View",
+   "options": "Daily\nWeekly\nMonthly"
+  },
+  {
+   "default": "1",
+   "description": "Update the modified timestamp on new email communication & comment for leads & deals",
+   "fieldname": "update_timestamp_on_new_communication",
+   "fieldtype": "Check",
+   "label": "Update timestamp on new communication"
+  },
+  {
+   "default": "0",
+   "description": "Automatically sets Communication Status to \u201cReplied\u201d for the lead or deal when a response is received. Applies only when SLA is enabled",
+   "fieldname": "auto_mark_replied_on_response",
+   "fieldtype": "Check",
+   "label": "Mark lead/deal as replied on response"
+  },
+  {
+   "default": "0",
+   "description": "Automatically sets Communication Status to \u201cOpen\u201d for the lead or deal when a new communication is created. Applies only when SLA is enabled",
+   "fieldname": "auto_reopen_on_new_communication",
+   "fieldtype": "Check",
+   "label": "Reopen lead/deal on new communication"
+  },
+  {
+   "fieldname": "restore_demo_data",
+   "fieldtype": "Button",
+   "label": "Restore Demo Data"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-03-27 18:02:14.802197",
+ "modified_by": "Administrator",
+ "module": "FCRM",
+ "name": "FCRM Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Sales User",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
