@@ -1,32 +1,45 @@
-
-  <a href="https://github.com/hitloop-ai/aiprof-frappe-crm">
-    <img src=".github/logo.png" height="80" alt="Frappe CRM Logo">
-  </a>
-  <h1>Frappe CRM (Customized)</h1>
+<div align="center">
+  <img src=".github/logo.png" height="80" alt="Frappe CRM Logo">
+  <h1>AIPROF CRM </h1>
   <p><strong>A tailored sales, communication, and event management platform built on Vue 3 and Frappe.</strong></p>
 </div>
 
 ---
 
-## What It Is & Key Uses
+## Features & Capabilities
 
-This customized Frappe CRM application supercharges standard sales operations by adding rich communication channels and scheduling capabilities. 
+This tailored CRM application is built on top of **Vue 3** and **Frappe Framework**, designed to supercharge sales operations, team collaboration, and communication channels. Below is a detailed breakdown of the features:
 
 ### 1. Unified Lead & Deal Management
-* **All-in-One Lead Page**: Track comments, notes, tasks, and history dynamically on a single, responsive layout.
-* **Kanban & Custom Views**: Organise leads and deals visually using drag-and-drop Kanban boards or create personalized list views with custom columns, quick sorting, and filters.
+* **All-in-One Lead Page**: View and manage comments, notes, tasks, and interaction history dynamically on a single, responsive layout.
+* **Kanban & Custom Views**: Organize leads and deals visually using drag-and-drop Kanban boards, or create personalized list views with custom columns, quick sorting, and advanced filters.
+* **Organization & Contacts Directory**: Track organizations, linked contacts, and their respective industries (`crm_industry`) to maintain clean account hierarchies.
 
-### 2. Vobiz Telephony Integration
-* **In-App Calling**: Make and receive calls directly from the CRM with active call timers and call log records.
-* **Real-time Sync & Automation**: Automatic update of Lead fields upon call creation/update, real-time call log sync via webhook events, and timezone-localized call histories.
-* **Integrated Call UI**: Call handling panels built natively into the frontend.
+### 2. Multi-Channel Telephony Integration
+Native, in-app calling integrations are built directly into the CRM interface, reducing friction for sales agents:
+* **Vobiz, Twilio & Exotel Settings**: Multi-provider support with dedicated integration settings (`crm_vobiz_settings`, `crm_twilio_settings`, `crm_exotel_settings`).
+* **Active Call UI**: Integrated, floating call panels with live timers, mute, and hang-up controls.
+* **Automatic Call Logs**: Every incoming and outgoing call is automatically logged (`crm_call_log`) with details like call duration, recording links, timestamp, and status.
+* **Real-time Webhook Sync**: Sync call events and lead states instantly using background webhook integrations.
 
-### 3. Calendar & Event Management
-* **Event Scheduling**: Plan meetings and invite attendees/users directly from the CRM.
-* **Real-time Notifications**: Receive system notifications for scheduled meetings and upcoming events.
+### 3. Service Level Agreements (SLA) & Priorities
+Ensure high-quality lead engagement and timely follow-ups:
+* **SLA Configuration**: Define Service Level Agreements (`crm_service_level_agreement`) with customizable service days and business hours.
+* **Response Priorities**: Set priorities (`crm_service_level_priority`) to track response times and escalation rules dynamically.
+* **Response Time Tracking**: Track rolling response times (`crm_rolling_response_time`) for agents.
 
-### 4. Real-time Frontend Updates
-* **Socket Integration**: Real-time interface updates for lead details and call statuses without manual page reloads.
+### 4. Sales Hierarchy & Territory Management
+* **Sales Team Hierarchy**: Define clear reporting lines and territory ownership (`crm_sales_hierarchy`) for leads and deals.
+* **Territory Assignment**: Manage leads by geographic or market segments (`crm_territory`) to optimize distribution.
+
+### 5. Task, Activity & Note Management
+* **Actionable Tasks**: Create, assign, and track progress on follow-up tasks (`crm_task`) linked to leads or deals.
+* **Rich Text Notes**: Attach notes (`fcrm_note`) to lead timelines to preserve crucial context and communication logs.
+* **Real-time Notifications**: Receive system notifications (`crm_notification`) for scheduled meetings, upcoming events, and SLA breaches.
+
+### 6. Real-time Frontend Updates
+* **Socket Integration**: Real-time interface updates for lead details, comments, and call statuses using Socket.io without manual page refreshes.
+* **Dynamic Fields Layout**: Modify forms and fields layout dynamically (`crm_fields_layout`, `crm_view_settings`) according to team requirements.
 
 ---
 
